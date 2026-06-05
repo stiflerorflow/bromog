@@ -47,8 +47,10 @@ _GROUNDING_SOFT = (
 
 _MOTIVATION_STYLE = (
     "\n\nMotivate THIS specific athlete about their diet and training. You may reference "
-    "their recent logged sets when it helps, but never invent data. Write 4-6 sentences, "
-    "fully in character. No markdown headings."
+    "their recent logged sets when it helps, but never invent data. If there is little or "
+    "no logged training yet, don't force specifics — motivate them generally and lean on one "
+    "relevant idea from the framework above. Write 4-6 sentences, fully in character. No "
+    "markdown headings."
 )
 
 # Motivation personas. `rigor` picks the grounding tone. `brief` is the character.

@@ -155,7 +155,11 @@ def coach_note():
     principles = (data.get("principles") or "").strip()
     persona = (data.get("persona") or "").strip()
     if not summary:
-        return jsonify({"error": "summary is required"}), 400
+        # Motivation still works with no history — it leans on the framework instead.
+        if kind == "motivation":
+            summary = "No training has been logged yet."
+        else:
+            return jsonify({"error": "summary is required"}), 400
 
     try:
         note = coach.generate_note(kind, user_name, summary, principles, persona)

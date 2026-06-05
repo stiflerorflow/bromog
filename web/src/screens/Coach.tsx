@@ -89,7 +89,7 @@ export function Coach() {
               <button
                 key={p.key}
                 className="mot-btn"
-                disabled={busy || noSessions}
+                disabled={busy}
                 onClick={() => generate("motivation", p.key, p.name)}
               >
                 <span className="mot-emoji">{p.emoji}</span>
@@ -99,7 +99,12 @@ export function Coach() {
             ))}
           </div>
 
-          {noSessions && <p className="muted small">Log a workout first.</p>}
+          {noSessions && (
+            <p className="muted small">
+              Log a workout to personalise the notes — the personalities will still pep you up
+              meanwhile.
+            </p>
+          )}
           {busy && <div className="card muted">Thinking…</div>}
           {error && <div className="card" style={{ color: "var(--danger)" }}>{error}</div>}
           {note && (
