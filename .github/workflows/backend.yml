@@ -1,23 +1,21 @@
 name: Deploy backend
 
-# Rebuilds the backend image in ACR and restarts the App Service on every push
-# to main that touches the server. Initial infra is created by infra/deploy.sh.
+# Rebuilds the backend image in ACR and rolls the Container App to it.
+# Manual trigger (Run workflow) — the initial deploy is done by
+# infra/deploy-containerapp.sh from your machine / Codespace.
 #
-# Required repo secrets:
-#   AZURE_CREDENTIALS  - output of: az ad sp create-for-rbac --sdk-auth --role contributor \
-#                          --scopes /subscriptions/<sub>/resourceGroups/<rg>
-# Required repo variables (Settings → Secrets and variables → Actions → Variables):
-#   RESOURCE_GROUP, ACR_NAME, APP_NAME
+# Requires repo secret AZURE_CREDENTIALS — create it with:
+#   az ad sp create-for-rbac --name bromog-ci --role contributor \
+#     --scopes /subscriptions/<sub-id>/resourceGroups/bromog-rg --sdk-auth
+# then paste the JSON output into the secret.
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "server/**"
-      - "requirements.txt"
-      - "Dockerfile"
-      - "gunicorn.conf.py"
+
+env:
+  RESOURCE_GROUP: bromog-rg
+  ACR_NAME: bromogacr0851824714
+  APP_NAME: bromog
 
 jobs:
   deploy:
@@ -30,11 +28,9 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Build image in ACR
-        run: az acr build -r ${{ vars.ACR_NAME }} -t bromog-backend:${{ github.sha }} -t bromog-backend:latest .
+        run: az acr build -r ${{ env.ACR_NAME }} -t bromog-backend:${{ github.sha }} -t bromog-backend:latest .
 
-      - name: Point web app at the new image and restart
+      - name: Roll the Container App to the new image
         run: |
-          az webapp config container set \
-            -g ${{ vars.RESOURCE_GROUP }} -n ${{ vars.APP_NAME }} \
-            --container-image-name ${{ vars.ACR_NAME }}.azurecr.io/bromog-backend:${{ github.sha }}
-          az webapp restart -g ${{ vars.RESOURCE_GROUP }} -n ${{ vars.APP_NAME }}
+          az containerapp update -g ${{ env.RESOURCE_GROUP }} -n ${{ env.APP_NAME }} \
+            --image ${{ env.ACR_NAME }}.azurecr.io/bromog-backend:${{ github.sha }}

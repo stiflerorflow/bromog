@@ -29,6 +29,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Surfaced as env so step `if:` can check them — GitHub disallows `secrets`
+    # directly inside `if:` expressions.
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -69,14 +73,14 @@ jobs:
           sed -i "s/versionName .*/versionName \"1.0.${{ github.run_number }}\"/" build.gradle
 
       - name: Build release APK (signed)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
         working-directory: web/android
         env:
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/bromog.keystore"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/bromog.keystore"
           ./gradlew --no-daemon assembleRelease
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           "$BT/zipalign" -f 4 app/build/outputs/apk/release/app-release-unsigned.apk bromog.apk
@@ -85,7 +89,7 @@ jobs:
             --ks-key-alias "$KEY_ALIAS" --key-pass env:KEY_PASS bromog.apk
 
       - name: Build debug APK (fallback when no keystore secret)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 == '' }}
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 == '' }}
         working-directory: web/android
         run: |
           ./gradlew --no-daemon assembleDebug
