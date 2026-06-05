@@ -60,8 +60,37 @@ def upsert_session(session_id: str):
     data = request.get_json(silent=True) or {}
     user_id = data.get("user_id")
     workout_key = data.get("workout_key")
-    if not user_id or not workout_key:
-        return jsonify({"error": "user_id and workout_key are required"}), 400
+    started_at = data.get("started_at")
+    if not user_id or not workout_key or not started_at:
+        return jsonify({"error": "user_id, workout_key and started_at are required"}), 400
+
+    # Validate the sets payload up front so a malformed body is a clean 400, not a 500.
+    raw_sets = data.get("sets", [])
+    if not isinstance(raw_sets, list):
+        return jsonify({"error": "sets must be a list"}), 400
+    parsed_sets = []
+    seen = set()
+    for entry in raw_sets:
+        try:
+            exercise_key = str(entry["exercise_key"])
+            set_index = int(entry["set_index"])
+            weight_kg = float(entry["weight_kg"])
+            reps = int(entry["reps"])
+        except (KeyError, TypeError, ValueError):
+            return jsonify({"error": "each set needs exercise_key, set_index, weight_kg, reps"}), 400
+        key = (exercise_key, set_index)
+        if key in seen:
+            return jsonify({"error": f"duplicate set {key}"}), 400
+        seen.add(key)
+        parsed_sets.append(
+            {
+                "exercise_key": exercise_key,
+                "set_index": set_index,
+                "weight_kg": weight_kg,
+                "reps": reps,
+                "done_at": entry.get("done_at"),
+            }
+        )
 
     Session = _session_factory()
     with Session() as s:
@@ -77,7 +106,7 @@ def upsert_session(session_id: str):
             ws.workout_key = workout_key
         ws.week_id = data.get("week_id")
         ws.slot_id = data.get("slot_id")
-        ws.started_at = data.get("started_at") or ws.started_at
+        ws.started_at = started_at
         ws.finished_at = data.get("finished_at")
         ws.status = data.get("status") or "LOGGED"
         ws.skippies = bool(data.get("skippies", False))
@@ -86,16 +115,8 @@ def upsert_session(session_id: str):
         # Replace sets wholesale (immutable record; replay = same content).
         ws.sets.clear()
         s.flush()
-        for entry in data.get("sets", []):
-            ws.sets.append(
-                SetEntry(
-                    exercise_key=entry["exercise_key"],
-                    set_index=int(entry["set_index"]),
-                    weight_kg=float(entry["weight_kg"]),
-                    reps=int(entry["reps"]),
-                    done_at=entry.get("done_at"),
-                )
-            )
+        for entry in parsed_sets:
+            ws.sets.append(SetEntry(**entry))
         s.commit()
         return jsonify(ws.to_dict()), 200
 

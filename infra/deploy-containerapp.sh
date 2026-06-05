@@ -44,23 +44,40 @@ echo "→ Building image in ACR (slow step)…"
 az acr build -r "$ACR_NAME" -t bromog-backend:latest "$ROOT" -o none
 
 echo "→ Container Apps environment"
-az containerapp env create -g "$RG" -n "$ENV_NAME" -l "$LOCATION" -o none
+if ! az containerapp env show -g "$RG" -n "$ENV_NAME" -o none 2>/dev/null; then
+  az containerapp env create -g "$RG" -n "$ENV_NAME" -l "$LOCATION" -o none
+fi
 
 ACR_SERVER=$(az acr show -n "$ACR_NAME" --query loginServer -o tsv)
 ACR_PASS=$(az acr credential show -n "$ACR_NAME" --query "passwords[0].value" -o tsv)
 
-echo "→ Deploying container app (scale-to-zero)"
-az containerapp create -g "$RG" -n "$APP_NAME" \
-  --environment "$ENV_NAME" \
-  --image "${ACR_SERVER}/bromog-backend:latest" \
-  --registry-server "$ACR_SERVER" --registry-username "$ACR_NAME" --registry-password "$ACR_PASS" \
-  --target-port 8000 --ingress external \
-  --min-replicas 0 --max-replicas 1 --cpu 0.5 --memory 1.0Gi \
-  --secrets app-token="$APP_TOKEN" anthropic-key="$ANTHROPIC_API_KEY" openai-key="$OPENAI_API_KEY" \
-  --env-vars APP_TOKEN=secretref:app-token DATABASE_URL="$DATABASE_URL" \
-             ANTHROPIC_API_KEY=secretref:anthropic-key OPENAI_API_KEY=secretref:openai-key \
-             APK_DOWNLOAD_URL="$APK_DOWNLOAD_URL" \
-  -o none
+# Idempotent: create the app the first time, otherwise roll it to the new image.
+# (Re-runnable — safe to invoke repeatedly to ship a new backend.)
+if az containerapp show -g "$RG" -n "$APP_NAME" -o none 2>/dev/null; then
+  echo "→ Updating existing container app"
+  az containerapp registry set -g "$RG" -n "$APP_NAME" \
+    --server "$ACR_SERVER" --username "$ACR_NAME" --password "$ACR_PASS" -o none
+  az containerapp secret set -g "$RG" -n "$APP_NAME" \
+    --secrets app-token="$APP_TOKEN" anthropic-key="$ANTHROPIC_API_KEY" openai-key="$OPENAI_API_KEY" -o none
+  az containerapp update -g "$RG" -n "$APP_NAME" \
+    --image "${ACR_SERVER}/bromog-backend:latest" \
+    --set-env-vars APP_TOKEN=secretref:app-token DATABASE_URL="$DATABASE_URL" \
+                   ANTHROPIC_API_KEY=secretref:anthropic-key OPENAI_API_KEY=secretref:openai-key \
+                   APK_DOWNLOAD_URL="$APK_DOWNLOAD_URL" -o none
+else
+  echo "→ Deploying container app (scale-to-zero)"
+  az containerapp create -g "$RG" -n "$APP_NAME" \
+    --environment "$ENV_NAME" \
+    --image "${ACR_SERVER}/bromog-backend:latest" \
+    --registry-server "$ACR_SERVER" --registry-username "$ACR_NAME" --registry-password "$ACR_PASS" \
+    --target-port 8000 --ingress external \
+    --min-replicas 0 --max-replicas 1 --cpu 0.5 --memory 1.0Gi \
+    --secrets app-token="$APP_TOKEN" anthropic-key="$ANTHROPIC_API_KEY" openai-key="$OPENAI_API_KEY" \
+    --env-vars APP_TOKEN=secretref:app-token DATABASE_URL="$DATABASE_URL" \
+               ANTHROPIC_API_KEY=secretref:anthropic-key OPENAI_API_KEY=secretref:openai-key \
+               APK_DOWNLOAD_URL="$APK_DOWNLOAD_URL" \
+    -o none
+fi
 
 FQDN=$(az containerapp show -g "$RG" -n "$APP_NAME" --query properties.configuration.ingress.fqdn -o tsv)
 URL="https://${FQDN}"

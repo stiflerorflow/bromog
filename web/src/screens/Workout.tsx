@@ -7,7 +7,7 @@ import { uuid } from "../data/uuid";
 import { isoWeek } from "../data/stats";
 import { RestBar, useRestTimer } from "../components/RestTimer";
 import { Stepper } from "../components/Stepper";
-import type { Exercise, LoggedSet, Session } from "../data/types";
+import type { Exercise, LoggedSet, Session, UserId } from "../data/types";
 
 interface Props {
   workoutKey: string;
@@ -21,6 +21,8 @@ interface SetState {
   weight: number;
   reps: number;
   done: boolean;
+  /** When the set was first marked done — preserved across later edits. */
+  doneAt?: string;
 }
 
 const setKey = (exKey: string, idx: number) => `${exKey}:${idx}`;
@@ -65,7 +67,7 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
         set_index: Number(idx) as 1 | 2,
         weight_kg: v.weight,
         reps: v.reps,
-        done_at: new Date().toISOString(),
+        done_at: v.doneAt ?? new Date().toISOString(),
       };
     }
     saveDraft(draft);
@@ -83,7 +85,14 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
     const k = setKey(ex.key, idx);
     const willBeDone = !sets[k].done;
     setSets((prev) => {
-      const next = { ...prev, [k]: { ...prev[k], done: willBeDone } };
+      const next = {
+        ...prev,
+        [k]: {
+          ...prev[k],
+          done: willBeDone,
+          doneAt: willBeDone ? new Date().toISOString() : undefined,
+        },
+      };
       persist(next);
       return next;
     });
@@ -111,7 +120,7 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
           set_index: i as 1 | 2,
           weight_kg: st.weight,
           reps: st.reps,
-          done_at: new Date().toISOString(),
+          done_at: st.doneAt ?? new Date().toISOString(),
         }))
     );
     const session: Session = {
@@ -225,8 +234,8 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
   );
 }
 
-function loadMeta(workoutKey: string, user: string) {
-  const existing = getDraft();
+function loadMeta(workoutKey: string, user: UserId) {
+  const existing = getDraft(user);
   if (existing && existing.workout_key === workoutKey && existing.user_id === user) {
     return { id: existing.id, startedAt: existing.started_at, draft: existing };
   }
@@ -245,9 +254,10 @@ function seed(
       const k = setKey(ex.key, idx);
       const logged = draft?.sets[k];
       if (logged) {
-        out[k] = { weight: logged.weight_kg, reps: logged.reps, done: true };
+        out[k] = { weight: logged.weight_kg, reps: logged.reps, done: true, doneAt: logged.done_at };
       } else {
-        out[k] = { weight: sug.weightKg ?? 20, reps: sug.reps, done: false };
+        const fallback = ex.equipment === "bodyweight" ? 0 : 20;
+        out[k] = { weight: sug.weightKg ?? fallback, reps: sug.reps, done: false };
       }
     }
   }

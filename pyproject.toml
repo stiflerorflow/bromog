@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+# Put the repo root on sys.path so `from server import ...` works under a bare `pytest`.
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 100

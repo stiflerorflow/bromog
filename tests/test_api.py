@@ -104,6 +104,25 @@ def test_defaults_when_skippies_fields_absent(client):
     assert got["status"] == "LOGGED"
 
 
+def test_upsert_validates_payload(client):
+    sid = str(uuid.uuid4())
+    # missing started_at
+    bad = _session_payload()
+    bad.pop("started_at")
+    assert client.put(f"/api/sessions/{sid}", json=bad, headers=_auth()).status_code == 400
+    # malformed set (non-numeric weight)
+    bad2 = _session_payload(sets=[{"exercise_key": "machine_press", "set_index": 1, "weight_kg": "heavy", "reps": 8}])
+    assert client.put(f"/api/sessions/{sid}", json=bad2, headers=_auth()).status_code == 400
+    # duplicate set index
+    dup = _session_payload(
+        sets=[
+            {"exercise_key": "machine_press", "set_index": 1, "weight_kg": 40, "reps": 8},
+            {"exercise_key": "machine_press", "set_index": 1, "weight_kg": 42, "reps": 8},
+        ]
+    )
+    assert client.put(f"/api/sessions/{sid}", json=dup, headers=_auth()).status_code == 400
+
+
 def test_upsert_rejects_unknown_user(client):
     sid = str(uuid.uuid4())
     resp = client.put(

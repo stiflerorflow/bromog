@@ -1,6 +1,6 @@
 import type { Session, UserId } from "./types";
 
-// Baked in at build time. For the APK these point at the Azure App Service URL +
+// Baked in at build time. For the APK these point at the Azure Container Apps URL +
 // the shared token. A missing base URL means "offline only" — the app still works,
 // it just won't sync or call the coach.
 const BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");

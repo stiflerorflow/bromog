@@ -11,7 +11,7 @@ import { isoWeek } from "./stats";
 const K = {
   user: "bromog.user",
   sessions: (u: UserId) => `bromog.sessions.${u}`,
-  draft: "bromog.draft",
+  draft: (u: UserId) => `bromog.draft.${u}`,
   queue: "bromog.syncqueue",
 };
 
@@ -84,7 +84,7 @@ export function commitSession(session: Session) {
   else sessions.unshift(session);
   saveSessions(session.user_id, sessions);
   enqueue(session);
-  clearDraft();
+  clearDraft(session.user_id);
   notify();
   void flushQueue();
 }
@@ -100,15 +100,15 @@ export interface Draft {
   sets: Record<string, LoggedSet>; // key: `${exercise_key}:${set_index}`
 }
 
-export function getDraft(): Draft | null {
-  return read<Draft | null>(K.draft, null);
+export function getDraft(userId: UserId = currentUser()): Draft | null {
+  return read<Draft | null>(K.draft(userId), null);
 }
 export function saveDraft(draft: Draft) {
-  write(K.draft, draft);
+  write(K.draft(draft.user_id), draft);
   notify();
 }
-export function clearDraft() {
-  localStorage.removeItem(K.draft);
+export function clearDraft(userId: UserId = currentUser()) {
+  localStorage.removeItem(K.draft(userId));
   notify();
 }
 

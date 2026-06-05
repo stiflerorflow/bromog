@@ -22,7 +22,8 @@ function bestSet(sets: { set: LoggedSet; at: string }[]): ExercisePR | null {
   let bestE1rm = -1;
   let bestE1rmAt = "";
   for (const { set, at } of sets) {
-    if (set.weight_kg > bestWeight) {
+    // Track the heaviest set; on a weight tie keep the higher rep count.
+    if (set.weight_kg > bestWeight || (set.weight_kg === bestWeight && set.reps > bestWeightReps)) {
       bestWeight = set.weight_kg;
       bestWeightReps = set.reps;
     }

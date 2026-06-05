@@ -44,7 +44,9 @@ export function suggest(exercise: Exercise, sessions: Session[]): Suggestion {
   }
 
   const lastWeight = last[0].weight_kg;
-  const allMaxed = last.every((set) => set.reps >= hi);
+  // Only progress the load from a complete (2-set) session — a lone set from a
+  // partial/auto-closed session shouldn't trigger a weight increase.
+  const allMaxed = last.length >= 2 && last.every((set) => set.reps >= hi);
 
   if (allMaxed && exercise.increment > 0) {
     const next = round(lastWeight + exercise.increment);

@@ -42,7 +42,7 @@ infra/    deploy-containerapp.sh   .github/workflows/  backend deploy + APK buil
 pip install -r requirements.txt
 python app.py                      # serves http://localhost:8000
 curl localhost:8000/api/health     # {"status":"ok"}
-pytest                             # 8 tests
+python -m pytest                   # backend tests
 ```
 
 Or via Docker (mirrors Azure):
@@ -56,7 +56,7 @@ Config (all optional locally — sensible defaults):
 
 | Env var | Default | Purpose |
 |---|---|---|
-| `DATABASE_URL` | SQLite on `/home` (or `./bromog.db`) | SQLAlchemy URL; set to a Postgres URL to upgrade |
+| `DATABASE_URL` | SQLite (`./bromog.db` locally) | SQLAlchemy URL; set to a Postgres URL for durable history |
 | `APP_TOKEN` | empty (auth disabled) | Shared bearer token guarding the API |
 | `ANTHROPIC_API_KEY` | empty | Enables the coach (Anthropic, preferred) |
 | `OPENAI_API_KEY` | empty | Coach fallback if no Anthropic key |
@@ -68,7 +68,7 @@ cd web
 npm install
 cp .env.example .env          # point VITE_API_BASE_URL at your backend
 npm run dev                   # http://localhost:5173
-npm test                     # overload + stats unit tests
+npm test                     # overload, stats, schedule unit tests
 ```
 
 ## 3. Deploy the backend to Azure (ACR → Container Apps)
@@ -107,7 +107,7 @@ offline; only sync and the coach use the network.
 
 ### Easiest: GitHub Actions
 
-1. Add repo secrets `API_BASE_URL` (your App Service URL) and `APP_TOKEN` (matching the
+1. Add repo secrets `API_BASE_URL` (your Container Apps URL) and `APP_TOKEN` (matching the
    backend). For an updatable, properly-signed build, also add `ANDROID_KEYSTORE_BASE64`,
    `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` (see
    [android.yml](.github/workflows/android.yml) for the one-line `keytool` command).
@@ -125,7 +125,7 @@ Needs Node, JDK 17+, and the Android SDK.
 
 ```bash
 cd web
-echo "VITE_API_BASE_URL=https://<your-app>.azurewebsites.net" > .env
+echo "VITE_API_BASE_URL=https://<your-app>.<region>.azurecontainerapps.io" > .env
 echo "VITE_APP_TOKEN=<your APP_TOKEN>" >> .env
 npm install
 npm run build
@@ -213,6 +213,6 @@ steppers.
 
 | What | Command |
 |---|---|
-| Backend (API, auth, idempotent sync, coach) | `pytest` |
-| Web logic (overload, stats/e1RM) | `cd web && npm test` |
+| Backend (API, auth, validation, idempotent sync, coach) | `python -m pytest` |
+| Web logic (overload, stats/e1RM, schedule/Tribunal) | `cd web && npm test` |
 | Backend container health | `docker compose up` → `curl localhost:8000/api/health` |
