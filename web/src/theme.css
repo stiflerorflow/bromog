@@ -81,7 +81,7 @@ h2 {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 15px 14px;
   margin-bottom: 12px;
   box-shadow: var(--shadow);
 }
@@ -183,17 +183,21 @@ button:disabled {
   box-shadow: 0 4px 12px rgba(91, 140, 255, 0.3);
 }
 
-/* Stepper for kg / reps */
+/* Stepper for kg / reps — fluid: buttons pin to the column edges, value flexes */
 .stepper {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
 }
 .stepper button {
-  width: 46px;
-  height: 46px;
-  font-size: 22px;
-  border-radius: 12px;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 44px;
+  font-size: 21px;
+  border-radius: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -201,11 +205,12 @@ button:disabled {
   box-shadow: none;
 }
 .stepper .val {
-  min-width: 62px;
+  flex: 1 1 auto;
+  min-width: 0;
   text-align: center;
 }
 .stepper .val .n {
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 750;
   font-variant-numeric: tabular-nums;
 }
@@ -216,11 +221,14 @@ button:disabled {
 
 .setrow {
   display: grid;
-  grid-template-columns: 24px 1fr 1fr 46px;
+  grid-template-columns: 18px 1fr 1fr 42px;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 10px 0;
   border-top: 1px solid var(--border-soft);
+}
+.setrow > * {
+  min-width: 0; /* let the stepper columns shrink instead of overflowing right */
 }
 .setrow .label {
   font-size: 13px;
@@ -231,15 +239,15 @@ button:disabled {
   color: var(--good);
 }
 .setrow button {
-  width: 46px;
-  height: 46px;
+  width: 42px;
+  height: 44px;
   padding: 0;
   font-size: 18px;
 }
 .colhead {
   display: grid;
-  grid-template-columns: 24px 1fr 1fr 46px;
-  gap: 8px;
+  grid-template-columns: 18px 1fr 1fr 42px;
+  gap: 6px;
   font-size: 11px;
   color: var(--muted);
   text-transform: uppercase;
