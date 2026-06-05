@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { USERS, getWorkout } from "../data/program";
 import {
   currentUser,
@@ -8,6 +8,7 @@ import {
   reconcileDrafts,
   setUser,
 } from "../data/store";
+import type { UserId } from "../data/types";
 import { apiConfigured } from "../data/api";
 import {
   activeSlot,
@@ -32,6 +33,9 @@ export function Home({ onStart, onResume, onPetition }: Props) {
   const sessions = useStore(() => getSessions(user));
   const pending = useStore(pendingSyncCount);
   const now = useNow();
+  const [switching, setSwitching] = useState(false);
+  const [confirmId, setConfirmId] = useState<UserId | null>(null);
+  const userName = USERS.find((u) => u.id === user)?.name ?? user;
 
   // Auto-close drafts whose grace period has elapsed (runs on each minute tick).
   useEffect(() => {
@@ -43,17 +47,54 @@ export function Home({ onStart, onResume, onPetition }: Props) {
   const lapsed = lapsedAmendable(slots);
   const next = nextUpcoming(slots);
 
+  function switchTo(id: UserId) {
+    setUser(id);
+    setConfirmId(null);
+    setSwitching(false);
+  }
+
   return (
     <div className="scroll">
+      <div className="row between" style={{ marginBottom: 2 }}>
+        <span />
+        <button className="user-chip" onClick={() => setSwitching((s) => !s)}>
+          👤 {userName}
+        </button>
+      </div>
       <h1 className="brand">BROMOG</h1>
 
-      <div className="seg" style={{ margin: "6px 0 8px" }}>
-        {USERS.map((u) => (
-          <button key={u.id} className={u.id === user ? "active" : ""} onClick={() => setUser(u.id)}>
-            {u.name}
-          </button>
-        ))}
-      </div>
+      {switching && (
+        <div className="card">
+          <div className="muted small" style={{ marginBottom: 8 }}>
+            Switching changes whose history you log into. You normally won't need this.
+          </div>
+          {confirmId ? (
+            <div className="row between">
+              <span className="small">
+                Switch to <strong>{USERS.find((u) => u.id === confirmId)?.name}</strong>?
+              </span>
+              <span className="row" style={{ gap: 8 }}>
+                <button onClick={() => setConfirmId(null)}>Cancel</button>
+                <button className="btn-primary" onClick={() => switchTo(confirmId)}>
+                  Switch
+                </button>
+              </span>
+            </div>
+          ) : (
+            <div className="seg">
+              {USERS.map((u) => (
+                <button
+                  key={u.id}
+                  className={u.id === user ? "active" : ""}
+                  onClick={() => (u.id === user ? setSwitching(false) : setConfirmId(u.id))}
+                >
+                  {u.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {apiConfigured && pending > 0 && (
         <p className="muted small">{pending} session{pending > 1 ? "s" : ""} waiting to sync…</p>

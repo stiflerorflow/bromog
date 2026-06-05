@@ -25,11 +25,17 @@ function session(weight: number, reps: [number, number], date = "2026-06-01T18:0
 }
 
 describe("progressive overload", () => {
-  it("blanks the weight with no history", () => {
-    const s = suggest(press, []);
+  it("uses the configured start weight when there's no history", () => {
+    const s = suggest(press, []); // machine_press has startWeight 65
+    expect(s.basis).toBe("first");
+    expect(s.weightKg).toBe(65);
+    expect(s.reps).toBe(8);
+  });
+
+  it("blanks the weight when no start weight is configured", () => {
+    const s = suggest(getExercise("lat_pulldown")!, []);
     expect(s.basis).toBe("first");
     expect(s.weightKg).toBeNull();
-    expect(s.reps).toBe(8);
   });
 
   it("adds an increment when both sets hit the top of the range", () => {

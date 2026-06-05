@@ -4,7 +4,9 @@ import { Workout } from "./screens/Workout";
 import { Stats } from "./screens/Stats";
 import { Coach } from "./screens/Coach";
 import { Tribunal } from "./screens/Tribunal";
-import { getDraft } from "./data/store";
+import { Onboarding } from "./screens/Onboarding";
+import { getChosenUser, getDraft } from "./data/store";
+import { useStore } from "./components/useStore";
 
 type Tab = "home" | "stats" | "coach";
 type View =
@@ -15,6 +17,16 @@ type View =
 export function App() {
   const [view, setView] = useState<View>({ kind: "tab", tab: "home" });
   const [finished, setFinished] = useState<null | "normal" | "amendment">(null);
+  const chosenUser = useStore(getChosenUser);
+
+  // First launch: pick the user once. Sticky thereafter.
+  if (!chosenUser) {
+    return (
+      <div className="app">
+        <Onboarding />
+      </div>
+    );
+  }
 
   if (view.kind === "workout") {
     return (

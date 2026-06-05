@@ -13,7 +13,7 @@ export const USERS: User[] = [
 const E = {
   machine_press: {
     key: "machine_press", name: "Machine Press", muscle: "Chest",
-    equipment: "machine", restSeconds: 120, increment: 2.5, repTarget: [8, 12],
+    equipment: "machine", restSeconds: 120, increment: 2.5, repTarget: [8, 12], startWeight: 65,
   },
   machine_row: {
     key: "machine_row", name: "Machine Row", muscle: "Back",
@@ -37,7 +37,7 @@ const E = {
   },
   rdl: {
     key: "rdl", name: "RDL", muscle: "Hams/Glutes",
-    equipment: "barbell", restSeconds: 120, increment: 2.5, repTarget: [8, 12],
+    equipment: "barbell", restSeconds: 120, increment: 2.5, repTarget: [8, 12], startWeight: 80,
   },
   hip_abduction: {
     key: "hip_abduction", name: "Hip Abduction", muscle: "Glutes",
@@ -53,7 +53,7 @@ const E = {
   },
   cable_oh_triceps: {
     key: "cable_oh_triceps", name: "Cable Overhead Triceps Extension", muscle: "Triceps",
-    equipment: "cable", restSeconds: 90, increment: 2.5, repTarget: [10, 15],
+    equipment: "cable", restSeconds: 90, increment: 2.5, repTarget: [10, 15], startWeight: 22.5,
   },
   rear_delt_fly: {
     key: "rear_delt_fly", name: "Rear Delt Fly", muscle: "Rear Delts",

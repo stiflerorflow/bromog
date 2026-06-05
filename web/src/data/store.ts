@@ -58,8 +58,12 @@ function write(key: string, value: unknown) {
 
 // ── Current user ──────────────────────────────────────────────────────────────
 export function currentUser(): UserId {
+  return getChosenUser() ?? USERS[0].id;
+}
+/** The explicitly-chosen user, or null if onboarding hasn't happened yet. */
+export function getChosenUser(): UserId | null {
   const stored = localStorage.getItem(K.user) as UserId | null;
-  return stored && USERS.some((u) => u.id === stored) ? stored : USERS[0].id;
+  return stored && USERS.some((u) => u.id === stored) ? stored : null;
 }
 export function setUser(id: UserId) {
   localStorage.setItem(K.user, id);
