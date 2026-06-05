@@ -13,6 +13,17 @@ export interface KnowledgeSection {
   entries: KnowledgeEntry[];
 }
 
+/**
+ * Compact digest of the whole Knowledge base (section → title: headline) used to
+ * ground the LLM coach. The app is the single source of truth — it ships this to
+ * the backend per coach request, so the coach never drifts from the framework.
+ */
+export function knowledgeDigest(): string {
+  return KNOWLEDGE.map(
+    (s) => `## ${s.title}\n` + s.entries.map((e) => `- ${e.title}: ${e.headline}`).join("\n")
+  ).join("\n\n");
+}
+
 export const KNOWLEDGE: KnowledgeSection[] = [
   {
     id: "diet",

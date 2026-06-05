@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { apiConfigured, fetchCoachNote } from "../data/api";
 import { getExercise, USERS } from "../data/program";
+import { knowledgeDigest } from "../data/knowledge";
 import { trendSummary } from "../data/stats";
 import { currentUser, getSessions } from "../data/store";
 import { useStore } from "../components/useStore";
@@ -21,7 +22,12 @@ export function Coach() {
     try {
       const summary = trendSummary(sessions, exerciseName);
       const userName = USERS.find((u) => u.id === user)?.name ?? "Athlete";
-      const text = await fetchCoachNote({ kind, user_name: userName, summary });
+      const text = await fetchCoachNote({
+        kind,
+        user_name: userName,
+        summary,
+        principles: knowledgeDigest(),
+      });
       setNote(text);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");

@@ -35,6 +35,8 @@ export interface CoachRequest {
   kind: "session" | "weekly";
   user_name: string;
   summary: string;
+  /** The training framework digest the coach must ground its advice in. */
+  principles?: string;
 }
 
 export async function fetchCoachNote(req: CoachRequest): Promise<string> {
