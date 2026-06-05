@@ -1,0 +1,13 @@
+web/
+infra/
+tests/
+.git/
+.github/
+__pycache__/
+*.pyc
+*.db
+.venv/
+node_modules/
+.devcontainer/
+README.md
+.claude/

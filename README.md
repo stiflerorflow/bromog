@@ -1,1 +1,194 @@
-# bromog
+# Bromog
+
+A clean, no-nonsense gym tracker for Stephen & Matt. Sideloaded Android app (no Play
+Store) + a small Azure backend for backup and an optional AI coach.
+
+- **Fixed program** — 4 workouts (Mon eve, Wed morn, Thu eve, Sat aft), fixed exercises,
+  **2 sets per exercise**, weights in **kg**.
+- **Seamless logging** — big +/- steppers, auto rest timer with buzz + beep, do exercises
+  in any order.
+- **Progressive overload** — deterministic double-progression suggestions from each
+  person's own history, pre-filled into every set.
+- **Local-first** — everything saves on-device instantly and works with zero signal;
+  finished sessions sync to Azure as immutable records when online.
+- **Stats** — PRs, estimated 1RM, progression graphs, weekly volume (separate tab).
+- **Coach** (optional) — tap-to-generate note on your trends, server-side only.
+
+## Architecture
+
+```
+web/      React + Vite + TS, bundled into a signed APK via Capacitor (offline UI)
+            └─ PUT /api/sessions/{id} · GET /api/sessions · POST /api/coach ─┐
+server/   Flask + SQLAlchemy API + LLM coach  ◀── Docker image in ACR ──── Azure App Service
+infra/    Bicep + deploy.sh   .github/workflows/  backend deploy + APK build  (SQLite on /home)
+```
+
+- **Phone is the live source of truth** during a workout. The backend is backup/restore
+  plus the coach. Sync is append-only and idempotent (keyed by a client UUID), so it's
+  robust to flaky gym wifi.
+- **Database** = SQLite at `/home/data/bromog.db`. Azure App Service persists `/home`
+  across restarts/deploys, so this needs **no extra resource and ~no extra cost**. Swap to
+  Postgres any time by setting `DATABASE_URL` — one env var, no code change.
+- **Two users** (`stephen`, `matt`) are hardcoded in
+  [web/src/data/program.ts](web/src/data/program.ts) and seeded in
+  [server/models.py](server/models.py). Switch at the top of the app.
+
+---
+
+## 1. Run the backend locally
+
+```bash
+pip install -r requirements.txt
+python app.py                      # serves http://localhost:8000
+curl localhost:8000/api/health     # {"status":"ok"}
+pytest                             # 8 tests
+```
+
+Or via Docker (mirrors Azure):
+
+```bash
+docker compose up --build
+curl localhost:8000/api/health
+```
+
+Config (all optional locally — sensible defaults):
+
+| Env var | Default | Purpose |
+|---|---|---|
+| `DATABASE_URL` | SQLite on `/home` (or `./bromog.db`) | SQLAlchemy URL; set to a Postgres URL to upgrade |
+| `APP_TOKEN` | empty (auth disabled) | Shared bearer token guarding the API |
+| `ANTHROPIC_API_KEY` | empty | Enables the coach (Anthropic, preferred) |
+| `OPENAI_API_KEY` | empty | Coach fallback if no Anthropic key |
+
+## 2. Run the web app locally
+
+```bash
+cd web
+npm install
+cp .env.example .env          # point VITE_API_BASE_URL at your backend
+npm run dev                   # http://localhost:5173
+npm test                     # overload + stats unit tests
+```
+
+## 3. Deploy the backend to Azure (ACR → App Service)
+
+One command (needs `az login`):
+
+```bash
+APP_TOKEN=pick-a-long-secret \
+ANTHROPIC_API_KEY=sk-ant-...        # optional, for the coach \
+./infra/deploy.sh                    # args: [resource-group] [location]
+```
+
+It creates the resource group, ACR (Basic), a Linux App Service (B1), builds the image
+with `az acr build`, and prints your API URL plus the exact `VITE_*` values for the APK
+build. Re-run it any time to ship a new backend.
+
+> Cost: ACR Basic + App Service B1 ≈ ~$18/mo. Stop the plan when unused to pause charges.
+
+**Continuous deploys (optional):** the [backend workflow](.github/workflows/backend.yml)
+rebuilds + redeploys on every push to `main` touching `server/**`. Set the
+`AZURE_CREDENTIALS` secret and `RESOURCE_GROUP` / `ACR_NAME` / `APP_NAME` variables.
+
+## 4. Build the Android APK (sideload, no Play Store)
+
+The web UI is **bundled inside the APK** (Capacitor), so it opens instantly and works
+offline; only sync and the coach use the network.
+
+### Easiest: GitHub Actions
+
+1. Add repo secrets `API_BASE_URL` (your App Service URL) and `APP_TOKEN` (matching the
+   backend). For an updatable, properly-signed build, also add `ANDROID_KEYSTORE_BASE64`,
+   `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` (see
+   [android.yml](.github/workflows/android.yml) for the one-line `keytool` command).
+2. Run the **Build Android APK** workflow (Actions tab → Run workflow).
+3. It publishes `bromog.apk` to the repo's **`latest` Release** (and a `bromog-apk`
+   workflow artifact). Grab it from there, or use the permanent link in
+   [§5](#5-a-hosted-download-link-thats-never-stale).
+
+Without a keystore secret the workflow still builds a debug-signed APK so you can test
+immediately — but use the keystore for the link you actually share (see §5 for why).
+
+### Or build locally
+
+Needs Node, JDK 17+, and the Android SDK.
+
+```bash
+cd web
+echo "VITE_API_BASE_URL=https://<your-app>.azurewebsites.net" > .env
+echo "VITE_APP_TOKEN=<your APP_TOKEN>" >> .env
+npm install
+npm run build
+npx cap add android        # first time only
+npx cap sync android
+cd android && ./gradlew assembleDebug
+# → app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Install on the phone
+
+1. Copy `bromog.apk` to the phone (USB, Drive, email — your call).
+2. Open it; allow "install from this source" when prompted.
+3. Tap install. Done — switch user at the top, pick a workout, start lifting.
+
+(`adb install bromog.apk` also works if the phone is plugged in with USB debugging on.)
+
+## 5. A hosted download link that's never stale
+
+Rather than re-sending a file every update, share **one permanent link** that always
+serves the newest build.
+
+The Android workflow publishes `bromog.apk` to a GitHub Release with a moving `latest`
+tag, so this permalink never changes but always points at the latest build:
+
+```
+https://github.com/<owner>/<repo>/releases/latest/download/bromog.apk
+```
+
+Your backend also hosts a friendly install page on your own domain — set the
+`APK_DOWNLOAD_URL` app setting to that permalink (the [deploy script](infra/deploy.sh)
+takes it as an env var, or set it in the Azure portal), then share:
+
+```
+https://<your-app>.azurewebsites.net/install
+```
+
+That page has a big **Install** button and a **QR code** to scan from a phone, and
+`/download` 302-redirects to the latest APK. The redirect target is constant; the asset
+behind it is replaced on every build.
+
+**For in-place updates** (no uninstall needed), the APK must be **release-signed with a
+stable key** — set the `ANDROID_KEYSTORE_*` secrets (see the top of
+[android.yml](.github/workflows/android.yml)). The workflow also bumps `versionCode` each
+build so phones recognise it as an update. (Debug-signed APKs use a throwaway key per CI
+run, so phones would force an uninstall/reinstall — fine for testing, not for the shared
+link.)
+
+> Note: the APK bundles `APP_TOKEN`, so anyone who downloads it can reach your backup API
+> (no personal data beyond workout logs). For a 3-person app that's fine; if you'd rather
+> not bake the token in, ask and I'll move it to a one-time in-app field instead.
+
+---
+
+## How progressive overload works
+
+Per exercise, the app looks at your most recent session for that movement
+([web/src/data/overload.ts](web/src/data/overload.ts)):
+
+- **No history** → blank weight, target the bottom of the rep range.
+- **Both sets hit the top of the range** → suggest `last weight + increment`, reset reps
+  to the bottom of the range.
+- **Otherwise** → hold the weight, target one more rep than your weakest set.
+
+Rep ranges, rest times, and weight increments per exercise live in
+[web/src/data/program.ts](web/src/data/program.ts) — tweak them there. Suggestions are
+pre-filled into each set; accepting is one tap, and you can always override with the
+steppers.
+
+## Tests
+
+| What | Command |
+|---|---|
+| Backend (API, auth, idempotent sync, coach) | `pytest` |
+| Web logic (overload, stats/e1RM) | `cd web && npm test` |
+| Backend container health | `docker compose up` → `curl localhost:8000/api/health` |

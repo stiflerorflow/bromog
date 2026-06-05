@@ -1,0 +1,20 @@
+# Local container run that mirrors Azure App Service.
+# `docker compose up` then: curl localhost:8000/api/health
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: "8000"
+      # Mirrors the App Service default: SQLite on the persisted /home volume.
+      DATABASE_URL: "sqlite:////home/data/bromog.db"
+      # Shared bearer token guarding the API (empty disables the check).
+      APP_TOKEN: "${APP_TOKEN:-local-dev-token}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+    volumes:
+      - bromog-data:/home/data
+
+volumes:
+  bromog-data:

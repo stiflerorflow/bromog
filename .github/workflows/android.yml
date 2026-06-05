@@ -1,0 +1,109 @@
+name: Build Android APK
+
+# Builds the Bromog APK and publishes it to a GitHub Release with a moving "latest"
+# tag, so this permalink ALWAYS serves the newest build (never stale):
+#
+#   https://github.com/<owner>/<repo>/releases/latest/download/bromog.apk
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   API_BASE_URL   - https://<your-app>.azurewebsites.net   (baked into the build)
+#   APP_TOKEN      - shared bearer token (must match the backend APP_TOKEN)
+# For an updatable, release-signed APK (recommended — a stable key lets phones
+# update in place instead of forcing an uninstall):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+#
+# Generate the keystore once, locally, then base64 it into the secret:
+#   keytool -genkey -v -keystore bromog.keystore -alias bromog \
+#     -keyalg RSA -keysize 2048 -validity 10000
+#   base64 -w0 bromog.keystore   # paste into ANDROID_KEYSTORE_BASE64
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["web/**", ".github/workflows/android.yml"]
+
+permissions:
+  contents: write # needed to publish the release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build web bundle
+        working-directory: web
+        env:
+          VITE_API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          VITE_APP_TOKEN: ${{ secrets.APP_TOKEN }}
+        run: npm run build
+
+      - name: Add Android platform
+        working-directory: web
+        run: |
+          if [ ! -d android ]; then npx cap add android; fi
+          npx cap sync android
+
+      - name: Bump version (so phones see each build as an update)
+        working-directory: web/android/app
+        run: |
+          sed -i "s/versionCode .*/versionCode ${{ github.run_number }}/" build.gradle
+          sed -i "s/versionName .*/versionName \"1.0.${{ github.run_number }}\"/" build.gradle
+
+      - name: Build release APK (signed)
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        working-directory: web/android
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/bromog.keystore"
+          ./gradlew --no-daemon assembleRelease
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/zipalign" -f 4 app/build/outputs/apk/release/app-release-unsigned.apk bromog.apk
+          "$BT/apksigner" sign \
+            --ks "$RUNNER_TEMP/bromog.keystore" --ks-pass env:KS_PASS \
+            --ks-key-alias "$KEY_ALIAS" --key-pass env:KEY_PASS bromog.apk
+
+      - name: Build debug APK (fallback when no keystore secret)
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 == '' }}
+        working-directory: web/android
+        run: |
+          ./gradlew --no-daemon assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk bromog.apk
+
+      - name: Publish to the "latest" Release (stable download link)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest APK
+          make_latest: true
+          files: web/android/bromog.apk
+          body: |
+            Always-latest Bromog APK — build ${{ github.run_number }} (${{ github.sha }}).
+            Download: `releases/latest/download/bromog.apk`
+
+      - name: Also upload as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bromog-apk
+          path: web/android/bromog.apk

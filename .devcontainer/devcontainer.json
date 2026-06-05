@@ -1,0 +1,94 @@
+{
+  "name": "Bromog",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": false
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  },
+
+  "forwardPorts": [
+    8000
+  ],
+
+  "portsAttributes": {
+    "8000": {
+      "label": "Bromog",
+      "onAutoForward": "openBrowser",
+      "visibility": "private"
+    }
+  },
+
+  "secrets": {
+    "ANTHROPIC_API_KEY": {
+      "description": "Anthropic API key for Claude Code and Bromog"
+    },
+    "OPENAI_API_KEY": {
+      "description": "OpenAI API key for Codex CLI and OpenAI-backed Bromog features"
+    }
+  },
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "postStartCommand": "echo '\\nBromog dev environment ready.\\n  App:    python app.py\\n  Claude: claude\\n  Codex:  codex\\n'",
+
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin:/home/vscode/.local/npm-global/bin",
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+    "NPM_CONFIG_PREFIX": "/home/vscode/.local/npm-global"
+  },
+
+  "containerEnv": {
+    "FLASK_SECRET_KEY": "dev-secret-key-change-in-prod",
+    "PYTHONUNBUFFERED": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "NPM_CONFIG_PREFIX": "/home/vscode/.local/npm-global"
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.formatting.provider": "none",
+        "editor.formatOnSave": true,
+        "editor.tabSize": 4,
+        "files.trimTrailingWhitespace": true,
+
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+
+        "python.testing.pytestEnabled": true
+      },
+
+      "extensions": [
+        "anthropic.claude-code",
+        "openai.chatgpt",
+
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.debugpy",
+
+        "ms-azuretools.vscode-docker",
+        "ms-azuretools.vscode-azureappservice",
+        "ms-azuretools.vscode-azurestorage",
+
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        "streetsidesoftware.code-spell-checker"
+      ]
+    }
+  },
+
+  "remoteUser": "vscode"
+}
