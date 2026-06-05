@@ -20,14 +20,17 @@ import {
 } from "../data/schedule";
 import { useStore } from "../components/useStore";
 import { useNow } from "../components/useNow";
+import { NextWorkoutCard, TheWeekSheet } from "../components/NextWorkoutCard";
+import { cardForSlot } from "../data/cards";
 
 interface Props {
   onStart: (workoutKey: string) => void;
   onResume: () => void;
   onPetition: () => void;
+  justFinished?: boolean;
 }
 
-export function Home({ onStart, onResume, onPetition }: Props) {
+export function Home({ onStart, onResume, onPetition, justFinished }: Props) {
   const user = useStore(currentUser);
   const draft = useStore(getDraft);
   const sessions = useStore(() => getSessions(user));
@@ -35,7 +38,10 @@ export function Home({ onStart, onResume, onPetition }: Props) {
   const now = useNow();
   const [switching, setSwitching] = useState(false);
   const [confirmId, setConfirmId] = useState<UserId | null>(null);
+  const [showWeek, setShowWeek] = useState(false);
   const userName = USERS.find((u) => u.id === user)?.name ?? user;
+
+  if (showWeek) return <TheWeekSheet onClose={() => setShowWeek(false)} />;
 
   // Auto-close drafts whose grace period has elapsed (runs on each minute tick).
   useEffect(() => {
@@ -46,6 +52,7 @@ export function Home({ onStart, onResume, onPetition }: Props) {
   const active = activeSlot(slots);
   const lapsed = lapsedAmendable(slots);
   const next = nextUpcoming(slots);
+  const nextCard = next ? cardForSlot(next.workout.slotId) : undefined;
 
   function switchTo(id: UserId) {
     setUser(id);
@@ -123,23 +130,25 @@ export function Home({ onStart, onResume, onPetition }: Props) {
             Enter session
           </button>
         </div>
-      ) : (
-        <div className="card">
-          {next ? (
-            <>
-              <div className="muted small">Next sanctioned window</div>
-              <strong>
-                {next.workout.day} {next.workout.time}
-              </strong>
-              <div className="muted small">
-                {next.workout.exercises.length * 2} sets · {next.workout.bias}
-              </div>
-            </>
-          ) : (
-            <div className="muted">All sessions of this week stand complete. ⚖️</div>
-          )}
+      ) : next && nextCard ? (
+        <>
+          <NextWorkoutCard
+            card={nextCard}
+            windowLabel={next.workout.time}
+            label={justFinished ? "Session logged ✓ · up next" : "Up next"}
+            onInfo={() => setShowWeek(true)}
+          />
           {lapsed && (
             <button className="btn-ghost petition" onClick={onPetition}>
+              petition the Tribunal…
+            </button>
+          )}
+        </>
+      ) : (
+        <div className="card">
+          <div className="muted">All sessions of this week stand complete. ⚖️</div>
+          {lapsed && (
+            <button className="btn-ghost petition" onClick={onPetition} style={{ marginTop: 8 }}>
               petition the Tribunal…
             </button>
           )}

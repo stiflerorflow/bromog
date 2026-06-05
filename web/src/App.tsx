@@ -37,7 +37,7 @@ export function App() {
           onExit={() => setView({ kind: "tab", tab: "home" })}
           onFinish={() => {
             setFinished(view.amendment ? "amendment" : "normal");
-            setView({ kind: "tab", tab: "stats" });
+            setView({ kind: "tab", tab: "home" });
           }}
         />
       </div>
@@ -60,6 +60,7 @@ export function App() {
     <div className="app">
       {tab === "home" && (
         <Home
+          justFinished={finished !== null}
           onStart={(workoutKey) => setView({ kind: "workout", workoutKey })}
           onResume={() => {
             const draft = getDraft();
@@ -68,20 +69,7 @@ export function App() {
           onPetition={() => setView({ kind: "tribunal" })}
         />
       )}
-      {tab === "stats" && (
-        <>
-          {finished && (
-            <div style={{ padding: "calc(16px + var(--safe-top)) 16px 0" }}>
-              <div className="banner">
-                {finished === "amendment"
-                  ? "Order satisfied. The record stands amended. This Court is adjourned. (The export remembers.)"
-                  : "Workout saved 💪 Check your PRs below, or ask the Coach."}
-              </div>
-            </div>
-          )}
-          <Stats />
-        </>
-      )}
+      {tab === "stats" && <Stats />}
       {tab === "coach" && <Coach />}
 
       <nav className="nav">

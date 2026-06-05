@@ -75,32 +75,32 @@ const bias = (ex: Exercise): Exercise => ({ ...ex, bias: true });
 // ── The four fixed workouts ─────────────────────────────────────────────────
 export const WORKOUTS: Workout[] = [
   {
-    key: "monday", slotId: "S1_MON", name: "Monday", day: "Monday", time: "16:00–23:00",
-    bias: "Quad bias", window: { weekday: 1, startHour: 16, endHour: 23 },
+    key: "monday", slotId: "S1_MON", name: "Monday", day: "Monday", time: "17:00–21:00",
+    bias: "Quad bias", window: { weekday: 1, startHour: 17, endHour: 21 },
     exercises: [
       E.machine_press, E.machine_row, bias(E.bulgarian_split_squat), bias(E.leg_extension),
       E.db_lateral_raise, E.preacher_curl, E.cable_oh_triceps, E.hip_abduction,
     ],
   },
   {
-    key: "wednesday", slotId: "S2_WED", name: "Wednesday", day: "Wednesday", time: "05:00–12:00",
-    bias: "Chest/push bias (post-run)", window: { weekday: 3, startHour: 5, endHour: 12 },
+    key: "wednesday", slotId: "S2_WED", name: "Wednesday", day: "Wednesday", time: "08:00–13:00",
+    bias: "Chest/push bias (post-run)", window: { weekday: 3, startHour: 8, endHour: 13 },
     exercises: [
       E.machine_press, E.lat_pulldown, bias(E.machine_shoulder_press), E.db_lateral_raise,
       E.preacher_curl, E.cable_oh_triceps, E.rdl,
     ],
   },
   {
-    key: "thursday", slotId: "S3_THU", name: "Thursday", day: "Thursday", time: "16:00–23:00",
-    bias: "Back/bicep bias", window: { weekday: 4, startHour: 16, endHour: 23 },
+    key: "thursday", slotId: "S3_THU", name: "Thursday", day: "Thursday", time: "17:00–21:00",
+    bias: "Back/bicep bias", window: { weekday: 4, startHour: 17, endHour: 21 },
     exercises: [
       E.machine_press, E.machine_row, E.bulgarian_split_squat, E.db_lateral_raise,
       bias(E.preacher_curl), E.rear_delt_fly, E.cable_crunch, E.hip_abduction,
     ],
   },
   {
-    key: "saturday", slotId: "S4_SAT", name: "Saturday", day: "Saturday", time: "12:00–18:00",
-    bias: "Glute/posterior bias (post-parkrun)", window: { weekday: 6, startHour: 12, endHour: 18 },
+    key: "saturday", slotId: "S4_SAT", name: "Saturday", day: "Saturday", time: "11:00–16:00",
+    bias: "Glute/posterior bias (post-parkrun)", window: { weekday: 6, startHour: 11, endHour: 16 },
     exercises: [
       E.machine_press, E.machine_row, bias(E.rdl), E.leg_extension, E.db_lateral_raise,
       E.roman_chair_leg_lift, E.cable_oh_triceps,
