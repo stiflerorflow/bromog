@@ -96,9 +96,10 @@ backend.
 > Azure Files mount (`database is locked`); for durable server history set `DATABASE_URL`
 > to a managed/free Postgres (e.g. Neon) — one env var, no code change.
 
-**Continuous deploys (optional):** the [backend workflow](.github/workflows/backend.yml)
-rebuilds + redeploys on every push to `main` touching `server/**`. Set the
-`AZURE_CREDENTIALS` secret and `RESOURCE_GROUP` / `ACR_NAME` / `APP_NAME` variables.
+**Redeploy the backend (optional):** the [backend workflow](.github/workflows/backend.yml)
+rebuilds the image in ACR and rolls the Container App. It's **manual** (Actions →
+Run workflow); set the `AZURE_CREDENTIALS` secret (the resource-group / ACR / app names
+are baked into the workflow). The initial deploy is `infra/deploy-containerapp.sh`.
 
 ## 4. Build the Android APK (sideload, no Play Store)
 
@@ -183,7 +184,7 @@ link.)
 ## Time-bound sessions & the Skippies Tribunal
 
 Each workout is a **slot** with a hard validity window on its weekday
-([program.ts](web/src/data/program.ts)): Mon 16–23, Wed 05–12, Thu 16–23, Sat 12–18 (local
+([program.ts](web/src/data/program.ts)): Mon 17–21, Wed 07–14, Thu 17–21, Sat 11–16 (local
 wall-clock). In-window, Home opens the session for frictionless logging. Out of window, a
 **lapsed** slot can only be performed by passing the **Skippies Tribunal**
 ([Tribunal.tsx](web/src/screens/Tribunal.tsx)) — a ≥3-tap mock-court flow that brands the

@@ -37,9 +37,11 @@ echo "→ Resource group: $RG ($LOCATION)"
 az group create -n "$RG" -l "$LOCATION" -o none
 
 echo "→ ACR: $ACR_NAME"
-az acr create -g "$RG" -n "$ACR_NAME" --sku Basic --admin-enabled true -o none
-# Brief settle so the registry is queryable before the build (avoids a race).
-sleep 10
+if ! az acr show -n "$ACR_NAME" -g "$RG" -o none 2>/dev/null; then
+  az acr create -g "$RG" -n "$ACR_NAME" --sku Basic --admin-enabled true -o none
+  # Brief settle so the registry is queryable before the build (avoids a race).
+  sleep 10
+fi
 echo "→ Building image in ACR (slow step)…"
 az acr build -r "$ACR_NAME" -t bromog-backend:latest "$ROOT" -o none
 

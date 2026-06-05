@@ -213,8 +213,49 @@ function reconcileUserDraft(userId: UserId, now: Date): void {
   });
 }
 
-/** Call once on app start: close stale drafts, push pending, pull remote history. */
+/**
+ * One-time migration of pre-existing on-device data to the current shape. Runs
+ * before anything reads sessions/drafts so an in-place app update doesn't lose a
+ * draft or mis-read this week's already-logged slots. Idempotent.
+ */
+export function migrateLegacyData(): void {
+  // 1. Drafts used to live under a single global key; move to the per-user key.
+  try {
+    const legacy = localStorage.getItem("bromog.draft");
+    if (legacy) {
+      const d = JSON.parse(legacy) as Draft;
+      if (d?.user_id) localStorage.setItem(K.draft(d.user_id), legacy);
+      localStorage.removeItem("bromog.draft");
+    }
+  } catch {
+    localStorage.removeItem("bromog.draft");
+  }
+
+  // 2. Backfill session fields added with the Tribunal (week_id/slot_id/status/
+  //    skippies). Without these, the schedule can't tell a session was logged this
+  //    week and would show it as upcoming/lapsed.
+  for (const u of USERS) {
+    const sessions = getSessions(u.id);
+    let changed = false;
+    const migrated = sessions.map((s) => {
+      if (s.week_id && s.slot_id && s.status) return s;
+      changed = true;
+      return {
+        ...s,
+        week_id: s.week_id || isoWeek(new Date(s.started_at)),
+        slot_id: s.slot_id || getWorkout(s.workout_key)?.slotId || "",
+        status: s.status || "LOGGED",
+        skippies: s.skippies ?? false,
+        skippies_confessed_at: s.skippies_confessed_at ?? null,
+      };
+    });
+    if (changed) saveSessions(u.id, migrated);
+  }
+}
+
+/** Call once on app start: migrate, close stale drafts, push pending, pull history. */
 export function bootSync() {
+  migrateLegacyData();
   reconcileDrafts();
   void flushQueue();
   void syncDown();
