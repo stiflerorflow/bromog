@@ -119,10 +119,15 @@ SEED_USERS = [
 
 def make_engine(database_url: str):
     connect_args = {}
+    kwargs = {"future": True}
     if database_url.startswith("sqlite"):
         # Flask serves requests across threads; allow the connection to be shared.
         connect_args["check_same_thread"] = False
-    return create_engine(database_url, connect_args=connect_args, future=True)
+    else:
+        # Postgres (e.g. Neon): validate pooled connections so a server-idled
+        # connection is transparently replaced instead of raising mid-request.
+        kwargs["pool_pre_ping"] = True
+    return create_engine(database_url, connect_args=connect_args, **kwargs)
 
 
 def init_db(engine) -> sessionmaker:
