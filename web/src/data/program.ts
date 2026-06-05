@@ -83,8 +83,8 @@ export const WORKOUTS: Workout[] = [
     ],
   },
   {
-    key: "wednesday", slotId: "S2_WED", name: "Wednesday", day: "Wednesday", time: "08:00–13:00",
-    bias: "Chest/push bias (post-run)", window: { weekday: 3, startHour: 8, endHour: 13 },
+    key: "wednesday", slotId: "S2_WED", name: "Wednesday", day: "Wednesday", time: "07:00–14:00",
+    bias: "Chest/push bias (post-run)", window: { weekday: 3, startHour: 7, endHour: 14 },
     exercises: [
       E.machine_press, E.lat_pulldown, bias(E.machine_shoulder_press), E.db_lateral_raise,
       E.preacher_curl, E.cable_oh_triceps, E.rdl,
