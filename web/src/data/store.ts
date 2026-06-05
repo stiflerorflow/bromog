@@ -24,16 +24,34 @@ function notify() {
   listeners.forEach((fn) => fn());
 }
 
+// Cache parsed values keyed by their raw string so repeated reads return a
+// referentially-stable result. This is required by useSyncExternalStore: a fresh
+// object on every read would be seen as a change each render and loop forever.
+const _readCache = new Map<string, { raw: string | null; value: unknown }>();
+
 function read<T>(key: string, fallback: T): T {
+  let raw: string | null = null;
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
+    raw = localStorage.getItem(key);
   } catch {
     return fallback;
   }
+  const cached = _readCache.get(key);
+  if (cached && cached.raw === raw) return cached.value as T;
+  let value: T;
+  try {
+    value = raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    value = fallback;
+  }
+  _readCache.set(key, { raw, value });
+  return value;
 }
 function write(key: string, value: unknown) {
-  localStorage.setItem(key, JSON.stringify(value));
+  const raw = JSON.stringify(value);
+  localStorage.setItem(key, raw);
+  // Keep the cache in sync so the next read returns this exact reference.
+  _readCache.set(key, { raw, value });
 }
 
 // ── Current user ──────────────────────────────────────────────────────────────

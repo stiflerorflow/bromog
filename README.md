@@ -19,16 +19,17 @@ Store) + a small Azure backend for backup and an optional AI coach.
 ```
 web/      React + Vite + TS, bundled into a signed APK via Capacitor (offline UI)
             └─ PUT /api/sessions/{id} · GET /api/sessions · POST /api/coach ─┐
-server/   Flask + SQLAlchemy API + LLM coach  ◀── Docker image in ACR ──── Azure App Service
-infra/    Bicep + deploy.sh   .github/workflows/  backend deploy + APK build  (SQLite on /home)
+server/   Flask + SQLAlchemy API + LLM coach  ◀── Docker image in ACR ──── Azure Container Apps
+infra/    deploy-containerapp.sh   .github/workflows/  backend deploy + APK build  (SQLite, scale-to-zero)
 ```
 
 - **Phone is the live source of truth** during a workout. The backend is backup/restore
   plus the coach. Sync is append-only and idempotent (keyed by a client UUID), so it's
   robust to flaky gym wifi.
-- **Database** = SQLite at `/home/data/bromog.db`. Azure App Service persists `/home`
-  across restarts/deploys, so this needs **no extra resource and ~no extra cost**. Swap to
-  Postgres any time by setting `DATABASE_URL` — one env var, no code change.
+- **Database** = SQLite (`DATABASE_URL`, default on the container's local disk). The backend
+  is a best-effort backup for a local-first app; under scale-to-zero its disk is ephemeral
+  (see the persistence note in §3). Swap to durable Postgres any time by setting
+  `DATABASE_URL` — one env var, no code change.
 - **Two users** (`stephen`, `matt`) are hardcoded in
   [web/src/data/program.ts](web/src/data/program.ts) and seeded in
   [server/models.py](server/models.py). Switch at the top of the app.
@@ -70,21 +71,30 @@ npm run dev                   # http://localhost:5173
 npm test                     # overload + stats unit tests
 ```
 
-## 3. Deploy the backend to Azure (ACR → App Service)
+## 3. Deploy the backend to Azure (ACR → Container Apps)
 
 One command (needs `az login`):
 
 ```bash
 APP_TOKEN=pick-a-long-secret \
-ANTHROPIC_API_KEY=sk-ant-...        # optional, for the coach \
-./infra/deploy.sh                    # args: [resource-group] [location]
+ANTHROPIC_API_KEY=sk-ant-...               # optional, for the coach \
+./infra/deploy-containerapp.sh             # args: [resource-group] [location, default eastus]
 ```
 
-It creates the resource group, ACR (Basic), a Linux App Service (B1), builds the image
-with `az acr build`, and prints your API URL plus the exact `VITE_*` values for the APK
-build. Re-run it any time to ship a new backend.
+It creates the resource group, ACR (Basic), an Azure Container Apps environment, builds
+the image with `az acr build`, deploys a **scale-to-zero** container app, and prints your
+API URL plus the exact `VITE_*` values for the APK build. Re-run it any time to ship a new
+backend.
 
-> Cost: ACR Basic + App Service B1 ≈ ~$18/mo. Stop the plan when unused to pause charges.
+> Cost: Container Apps Consumption has a free monthly grant and scales to zero when idle,
+> so a 3-person app is ~free; ACR Basic is ~$5/mo. (We use Container Apps instead of a
+> Basic App Service plan because fresh subscriptions often have 0 VM quota for that SKU.)
+>
+> Persistence: the backend stores its SQLite backup on the container's local disk, which
+> is ephemeral under scale-to-zero — server history can reset on a cold start, and the
+> phones (the source of truth) re-sync on the next finish. SQLite does **not** work on an
+> Azure Files mount (`database is locked`); for durable server history set `DATABASE_URL`
+> to a managed/free Postgres (e.g. Neon) — one env var, no code change.
 
 **Continuous deploys (optional):** the [backend workflow](.github/workflows/backend.yml)
 rebuilds + redeploys on every push to `main` touching `server/**`. Set the
@@ -146,11 +156,11 @@ https://github.com/<owner>/<repo>/releases/latest/download/bromog.apk
 ```
 
 Your backend also hosts a friendly install page on your own domain — set the
-`APK_DOWNLOAD_URL` app setting to that permalink (the [deploy script](infra/deploy.sh)
-takes it as an env var, or set it in the Azure portal), then share:
+`APK_DOWNLOAD_URL` app setting to that permalink (the [deploy script](infra/deploy-containerapp.sh)
+takes it as an env var, or `az containerapp update --set-env-vars`), then share:
 
 ```
-https://<your-app>.azurewebsites.net/install
+https://<your-app>.<region>.azurecontainerapps.io/install
 ```
 
 That page has a big **Install** button and a **QR code** to scan from a phone, and

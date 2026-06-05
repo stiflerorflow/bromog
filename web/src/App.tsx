@@ -3,6 +3,7 @@ import { Home } from "./screens/Home";
 import { Workout } from "./screens/Workout";
 import { Stats } from "./screens/Stats";
 import { Coach } from "./screens/Coach";
+import { getDraft } from "./data/store";
 
 type Tab = "home" | "stats" | "coach";
 type View = { kind: "tab"; tab: Tab } | { kind: "workout"; workoutKey: string };
@@ -33,7 +34,7 @@ export function App() {
         <Home
           onStart={(workoutKey) => setView({ kind: "workout", workoutKey })}
           onResume={() => {
-            const draft = JSON.parse(localStorage.getItem("bromog.draft") || "null");
+            const draft = getDraft();
             if (draft) setView({ kind: "workout", workoutKey: draft.workout_key });
           }}
         />
