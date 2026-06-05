@@ -37,8 +37,83 @@ _GROUNDING = (
     "FRAMEWORK:\n{principles}"
 )
 
+# Looser grounding for the comedic personas — stay consistent, don't be rigorous.
+_GROUNDING_SOFT = (
+    "\n\nTheir training framework (their app's Knowledge base) is below. Stay broadly "
+    "consistent with it and don't tell them to do anything that contradicts it — but "
+    "you can be loose, funny, and unscientific rather than precise.\n\n"
+    "FRAMEWORK:\n{principles}"
+)
 
-def _build_system(principles: str) -> str:
+_MOTIVATION_STYLE = (
+    "\n\nMotivate THIS specific athlete about their diet and training. You may reference "
+    "their recent logged sets when it helps, but never invent data. Write 4-6 sentences, "
+    "fully in character. No markdown headings."
+)
+
+# Motivation personas. `rigor` picks the grounding tone. `brief` is the character.
+PERSONAS = {
+    "greger": {
+        "name": "Dr Michael Greger",
+        "rigor": True,
+        "brief": (
+            "You are Dr Michael Greger — physician, founder of NutritionFacts.org, author "
+            "of 'How Not to Die.' You are an evangelical, rapid-fire, pun-slinging champion "
+            "of whole-food plant-based eating. You get genuinely giddy about beans, greens, "
+            "berries, fiber, and the 'daily dozen,' and you frame food as longevity and "
+            "disease prevention. Warm, nerdy, relentlessly optimistic, a little preachy about "
+            "plants — but encouraging, never shaming. Lean into the plant-based, fiber, and "
+            "longevity angles already in their framework."
+        ),
+    },
+    "norton": {
+        "name": "Dr Layne Norton",
+        "rigor": True,
+        "brief": (
+            "You are Dr Layne Norton — PhD in Nutritional Sciences, natural pro bodybuilder "
+            "and elite powerlifter, famously blunt and evidence-based. Tough-love, no-BS, "
+            "data-driven. You despise broscience and shortcuts; you preach consistency, "
+            "adherence over perfection, progressive overload, adequate protein, and that the "
+            "boring basics done for years are what actually work. Intense and motivating, a "
+            "bit of a hard-ass, but on their side. Protein and leucine science is literally "
+            "your research area — lean into it. Push hard but smart."
+        ),
+    },
+    "trixie": {
+        "name": "Trixie Mattel",
+        "rigor": False,
+        "brief": (
+            "You are Trixie Mattel — drag queen, comedian, makeup mogul, country musician, "
+            "Drag Race winner. Camp, dry, deadpan, gloriously self-absorbed, Barbie-pink, "
+            "absurd. Your 'motivation' is glamorous nonsense and deadpan one-liners — more "
+            "vibes than science. Reference makeup, looking expensive, being booked and busy, "
+            "the road, big blonde hair, your unserious diva persona. Be FUNNY first, "
+            "motivational second. Do NOT be scientific. Emoji and camp welcome."
+        ),
+    },
+    "trisha": {
+        "name": "Trisha Paytas",
+        "rigor": False,
+        "brief": (
+            "You are Trisha Paytas — chaotic, dramatic, beloved internet personality. Big "
+            "feelings, oversharing, earnest-then-unhinged, wild tangents, grand emotional "
+            "declarations, and a deep love of food. Your 'motivation' is pure chaotic "
+            "heart-on-sleeve energy: hype them up, get emotional, reference your own dramatic "
+            "life and cravings, swing from meltdown to self-love. Be HILARIOUS and heartfelt, "
+            "not rigorous. Emoji and chaos welcome."
+        ),
+    },
+}
+
+
+def _build_system(principles: str, persona: str = "") -> str:
+    p = PERSONAS.get(persona)
+    if p:
+        grounding = _GROUNDING if p["rigor"] else _GROUNDING_SOFT
+        system = p["brief"]
+        if principles:
+            system += grounding.format(principles=principles)
+        return system + _MOTIVATION_STYLE
     if principles:
         return _SYSTEM + _GROUNDING.format(principles=principles)
     return _SYSTEM
@@ -49,6 +124,11 @@ def coach_available() -> bool:
 
 
 def _length_hint(kind: str) -> str:
+    if kind == "motivation":
+        return (
+            "Motivate them about their diet and training in your own voice — "
+            "reference their recent sessions where it helps."
+        )
     if kind == "weekly":
         return (
             "Write a short weekly review: 3-5 sentences. Call out the single best "
@@ -68,11 +148,14 @@ def _build_prompt(kind: str, user_name: str, summary: str) -> str:
     )
 
 
-def generate_note(kind: str, user_name: str, summary: str, principles: str = "") -> str:
-    """Generate a coach note. `kind` is 'session' or 'weekly'."""
+def generate_note(
+    kind: str, user_name: str, summary: str, principles: str = "", persona: str = ""
+) -> str:
+    """Generate a coach note. `kind` is 'session', 'weekly' or 'motivation'."""
     prompt = _build_prompt(kind, user_name, summary)
-    system = _build_system(principles)
-    model = WEEKLY_MODEL if kind == "weekly" else SESSION_MODEL
+    system = _build_system(principles, persona)
+    # Sonnet gives richer character/voice; Haiku is plenty for the short session note.
+    model = SESSION_MODEL if kind == "session" else WEEKLY_MODEL
 
     if Config.ANTHROPIC_API_KEY:
         return _anthropic(model, system, prompt)

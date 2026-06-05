@@ -148,16 +148,17 @@ def coach_note():
 
     data = request.get_json(silent=True) or {}
     kind = data.get("kind", "session")
-    if kind not in ("session", "weekly"):
-        return jsonify({"error": "kind must be 'session' or 'weekly'"}), 400
+    if kind not in ("session", "weekly", "motivation"):
+        return jsonify({"error": "kind must be 'session', 'weekly' or 'motivation'"}), 400
     summary = (data.get("summary") or "").strip()
     user_name = data.get("user_name") or "Athlete"
     principles = (data.get("principles") or "").strip()
+    persona = (data.get("persona") or "").strip()
     if not summary:
         return jsonify({"error": "summary is required"}), 400
 
     try:
-        note = coach.generate_note(kind, user_name, summary, principles)
+        note = coach.generate_note(kind, user_name, summary, principles, persona)
     except Exception:  # surface upstream failures without leaking internals
         current_app.logger.exception("coach generation failed")
         return jsonify({"error": "coach generation failed"}), 502
