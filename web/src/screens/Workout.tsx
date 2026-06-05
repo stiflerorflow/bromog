@@ -60,6 +60,7 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
       started_at: meta.startedAt,
       skippies: isAmendment,
       sets: {},
+      working: next, // full editor state, incl. not-yet-done sets
     };
     for (const [k, v] of Object.entries(next)) {
       if (!v.done) continue;
@@ -78,7 +79,7 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
   function update(k: string, patch: Partial<SetState>) {
     setSets((prev) => {
       const next = { ...prev, [k]: { ...prev[k], ...patch } };
-      if (next[k].done) persist(next);
+      persist(next); // persist prep edits too, not just done sets
       return next;
     });
   }
@@ -256,8 +257,12 @@ function seed(
     const sug = suggestions[ex.key];
     for (let idx = 1; idx <= SETS_PER_EXERCISE; idx++) {
       const k = setKey(ex.key, idx);
+      const working = draft?.working?.[k];
       const logged = draft?.sets[k];
-      if (logged) {
+      if (working) {
+        // Restore exactly — including prep edits on not-yet-done sets.
+        out[k] = { weight: working.weight, reps: working.reps, done: working.done, doneAt: working.doneAt };
+      } else if (logged) {
         out[k] = { weight: logged.weight_kg, reps: logged.reps, done: true, doneAt: logged.done_at };
       } else {
         const fallback = ex.equipment === "bodyweight" ? 0 : 20;

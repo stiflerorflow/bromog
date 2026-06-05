@@ -113,6 +113,40 @@ def test_defaults_when_skippies_fields_absent(client):
     assert got["status"] == "LOGGED"
 
 
+def test_legacy_db_gets_missing_columns(tmp_path):
+    # Reproduce a pre-Skippies DB (no week_id/slot_id/status/skippies columns) and
+    # confirm startup patches them in so reads don't crash.
+    import sqlite3
+
+    db = tmp_path / "old.db"
+    con = sqlite3.connect(db)
+    con.execute("CREATE TABLE users (id VARCHAR PRIMARY KEY, name VARCHAR)")
+    con.execute(
+        "CREATE TABLE sessions (id VARCHAR PRIMARY KEY, user_id VARCHAR, "
+        "workout_key VARCHAR, started_at VARCHAR, finished_at VARCHAR, synced_at VARCHAR)"
+    )
+    con.execute(
+        "CREATE TABLE set_entries (id INTEGER PRIMARY KEY, session_id VARCHAR, "
+        "exercise_key VARCHAR, set_index INTEGER, weight_kg FLOAT, reps INTEGER, done_at VARCHAR)"
+    )
+    con.execute("INSERT INTO users VALUES ('stephen','Stephen')")
+    con.execute(
+        "INSERT INTO sessions (id,user_id,workout_key,started_at) "
+        "VALUES ('old1','stephen','monday','2026-06-01T18:00:00Z')"
+    )
+    con.commit()
+    con.close()
+
+    app = create_app(database_url=f"sqlite:///{db}")
+    app.testing = True
+    with app.test_client() as c:
+        resp = c.get("/api/sessions?user=stephen", headers=_auth())
+        assert resp.status_code == 200
+        row = resp.get_json()[0]
+        assert row["id"] == "old1"
+        assert row["week_id"] is None  # column now exists, value null
+
+
 def test_upsert_validates_payload(client):
     sid = str(uuid.uuid4())
     # missing started_at

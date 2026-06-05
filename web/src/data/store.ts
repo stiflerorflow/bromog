@@ -101,7 +101,9 @@ export interface Draft {
   started_at: string;
   /** True when this draft is a Skippies Amendment Session (started via the Tribunal). */
   skippies: boolean;
-  sets: Record<string, LoggedSet>; // key: `${exercise_key}:${set_index}`
+  sets: Record<string, LoggedSet>; // done sets — these become the session
+  /** Full editor state (incl. not-yet-done sets) so prep edits survive a reopen. */
+  working?: Record<string, { weight: number; reps: number; done: boolean; doneAt?: string }>;
 }
 
 export function getDraft(userId: UserId = currentUser()): Draft | null {
@@ -153,7 +155,7 @@ export async function flushQueue(): Promise<void> {
 export async function syncDown(userId: UserId = currentUser()): Promise<void> {
   if (!apiConfigured) return;
   try {
-    const remote = await fetchSessions(userId);
+    const remote = (await fetchSessions(userId)).map(normalizeSession);
     const local = getSessions(userId);
     const byId = new Map<string, Session>();
     for (const s of remote) byId.set(s.id, s);
@@ -166,6 +168,19 @@ export async function syncDown(userId: UserId = currentUser()): Promise<void> {
   } catch {
     // offline — keep local data
   }
+}
+
+/** Backfill the Tribunal-era fields on any session that predates them. */
+function normalizeSession(s: Session): Session {
+  if (s.week_id && s.slot_id && s.status) return s;
+  return {
+    ...s,
+    week_id: s.week_id || isoWeek(new Date(s.started_at)),
+    slot_id: s.slot_id || getWorkout(s.workout_key)?.slotId || "",
+    status: s.status || "LOGGED",
+    skippies: s.skippies ?? false,
+    skippies_confessed_at: s.skippies_confessed_at ?? null,
+  };
 }
 
 /** On id conflict, keep the more-complete record (LOGGED over PARTIAL; else later finish). */
@@ -236,21 +251,15 @@ export function migrateLegacyData(): void {
   //    week and would show it as upcoming/lapsed.
   for (const u of USERS) {
     const sessions = getSessions(u.id);
-    let changed = false;
-    const migrated = sessions.map((s) => {
-      if (s.week_id && s.slot_id && s.status) return s;
-      changed = true;
-      return {
-        ...s,
-        week_id: s.week_id || isoWeek(new Date(s.started_at)),
-        slot_id: s.slot_id || getWorkout(s.workout_key)?.slotId || "",
-        status: s.status || "LOGGED",
-        skippies: s.skippies ?? false,
-        skippies_confessed_at: s.skippies_confessed_at ?? null,
-      };
-    });
-    if (changed) saveSessions(u.id, migrated);
+    const migrated = sessions.map(normalizeSession);
+    if (migrated.some((s, i) => s !== sessions[i])) saveSessions(u.id, migrated);
   }
+
+  // 3. Normalise anything still sitting in the offline sync queue, so a legacy
+  //    queued item doesn't reach the server (or get restored) without metadata.
+  const queue = read<Session[]>(K.queue, []);
+  const normQueue = queue.map(normalizeSession);
+  if (normQueue.some((s, i) => s !== queue[i])) write(K.queue, normQueue);
 }
 
 /** Call once on app start: migrate, close stale drafts, push pending, pull history. */

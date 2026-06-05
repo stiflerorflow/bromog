@@ -18,6 +18,8 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     create_engine,
+    inspect,
+    text,
 )
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -136,8 +138,34 @@ def make_engine(database_url: str):
     return create_engine(database_url, connect_args=connect_args, **kwargs)
 
 
+# Columns added after v1 (the Skippies feature). create_all() won't add these to an
+# existing table, so we patch them in additively at startup — a tiny migration that
+# keeps a pre-existing SQLite/Postgres DB from crashing on the new ORM queries.
+_ADDED_SESSION_COLUMNS = {
+    "week_id": "VARCHAR",
+    "slot_id": "VARCHAR",
+    "status": "VARCHAR",
+    "skippies": "BOOLEAN",
+    "skippies_confessed_at": "VARCHAR",
+}
+
+
+def _ensure_session_columns(engine) -> None:
+    insp = inspect(engine)
+    if "sessions" not in insp.get_table_names():
+        return  # create_all will make it fresh with every column
+    existing = {c["name"] for c in insp.get_columns("sessions")}
+    missing = {n: t for n, t in _ADDED_SESSION_COLUMNS.items() if n not in existing}
+    if not missing:
+        return
+    with engine.begin() as conn:
+        for name, sqltype in missing.items():
+            conn.execute(text(f"ALTER TABLE sessions ADD COLUMN {name} {sqltype}"))
+
+
 def init_db(engine) -> sessionmaker:
     Base.metadata.create_all(engine)
+    _ensure_session_columns(engine)
     Session = sessionmaker(bind=engine, future=True, expire_on_commit=False)
     with Session() as s:
         for u in SEED_USERS:

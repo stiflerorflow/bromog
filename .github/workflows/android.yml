@@ -6,7 +6,7 @@ name: Build Android APK
 #   https://github.com/<owner>/<repo>/releases/latest/download/bromog.apk
 #
 # Required repo secrets (Settings → Secrets and variables → Actions):
-#   API_BASE_URL   - https://<your-app>.azurewebsites.net   (baked into the build)
+#   API_BASE_URL   - https://<your-app>.<region>.azurecontainerapps.io   (baked into the build)
 #   APP_TOKEN      - shared bearer token (must match the backend APP_TOKEN)
 # For an updatable, release-signed APK (recommended — a stable key lets phones
 # update in place instead of forcing an uninstall):

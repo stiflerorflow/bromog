@@ -1,7 +1,8 @@
 """Runtime configuration, read from environment variables.
 
 Everything has a sensible local-dev default so `python app.py` works with no setup.
-In Azure App Service these are provided as Application Settings.
+In production (Azure Container Apps) these are provided as environment variables /
+secrets; the durable database is Neon Postgres via DATABASE_URL.
 """
 
 import os
@@ -10,14 +11,12 @@ import os
 def _db_url() -> str:
     """SQLAlchemy engine URL.
 
-    Default: SQLite at /home/data on App Service (persisted when
-    WEBSITES_ENABLE_APP_SERVICE_STORAGE=true), or ./bromog.db locally.
-    Set DATABASE_URL to a Postgres URL to upgrade with no code change.
+    Production sets DATABASE_URL to the Neon Postgres URL. With nothing set we fall
+    back to a local SQLite file (dev only — the container disk is ephemeral).
     """
     explicit = os.environ.get("DATABASE_URL")
     if explicit:
         return explicit
-    # /home is persisted on App Service Linux; fall back to repo root locally.
     home_data = "/home/data"
     target_dir = home_data if os.path.isdir("/home") and os.access("/home", os.W_OK) else "."
     if target_dir == home_data:

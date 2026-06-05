@@ -79,6 +79,8 @@ def upsert_session(session_id: str):
             reps = int(entry["reps"])
         except (KeyError, TypeError, ValueError):
             return jsonify({"error": "each set needs exercise_key, set_index, weight_kg, reps"}), 400
+        if set_index not in (1, 2) or not (0 <= weight_kg <= 2000) or not (0 <= reps <= 1000):
+            return jsonify({"error": "set values out of range"}), 400
         key = (exercise_key, set_index)
         if key in seen:
             return jsonify({"error": f"duplicate set {key}"}), 400
@@ -109,7 +111,8 @@ def upsert_session(session_id: str):
         ws.slot_id = data.get("slot_id")
         ws.started_at = started_at
         ws.finished_at = data.get("finished_at")
-        ws.status = data.get("status") or "LOGGED"
+        status = data.get("status") or "LOGGED"
+        ws.status = status if status in ("LOGGED", "PARTIAL") else "LOGGED"
         ws.skippies = bool(data.get("skippies", False))
         ws.skippies_confessed_at = data.get("skippies_confessed_at")
 
