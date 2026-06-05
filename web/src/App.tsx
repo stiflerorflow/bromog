@@ -73,7 +73,13 @@ export function App() {
       {tab === "coach" && <Coach />}
 
       <nav className="nav">
-        {(["home", "stats", "coach"] as Tab[]).map((t) => (
+        {(
+          [
+            ["home", "🏋️", "Workout"],
+            ["stats", "📈", "Stats"],
+            ["coach", "💬", "Coach"],
+          ] as [Tab, string, string][]
+        ).map(([t, icon, label]) => (
           <button
             key={t}
             className={t === tab ? "active" : ""}
@@ -82,7 +88,8 @@ export function App() {
               setView({ kind: "tab", tab: t });
             }}
           >
-            {t === "home" ? "Workout" : t === "stats" ? "Stats" : "Coach"}
+            <span className="nav-ico">{icon}</span>
+            <span>{label}</span>
           </button>
         ))}
       </nav>

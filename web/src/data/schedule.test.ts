@@ -72,7 +72,7 @@ describe("slot state machine", () => {
 });
 
 describe("amendment selection", () => {
-  it("amends the earliest lapsed slot when several have lapsed", () => {
+  it("amends the most recent lapsed slot when several have lapsed", () => {
     // After Thursday's window: Mon/Wed/Thu lapsed, Sat upcoming.
     const thu = getWorkout("thursday")!;
     const now = at(slotWindow(thu, anchor).end, 60);
@@ -82,6 +82,6 @@ describe("amendment selection", () => {
     expect(states.wednesday).toBe("LAPSED");
     expect(states.thursday).toBe("LAPSED");
     expect(states.saturday).toBe("UPCOMING");
-    expect(lapsedAmendable(slots)?.workout.key).toBe("monday");
+    expect(lapsedAmendable(slots)?.workout.key).toBe("thursday");
   });
 });

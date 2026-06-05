@@ -40,7 +40,16 @@ export function suggest(exercise: Exercise, sessions: Session[]): Suggestion {
   const last = lastSetsFor(exercise.key, sessions);
 
   if (!last || last.length === 0) {
-    return { weightKg: null, reps: lo, basis: "first", note: "First time — log your working weight." };
+    const start = exercise.startWeight ?? null;
+    return {
+      weightKg: start,
+      reps: lo,
+      basis: "first",
+      note:
+        start != null
+          ? `Starting weight ${fmt(start)}kg — adjust if needed.`
+          : "First time — log your working weight.",
+    };
   }
 
   const lastWeight = last[0].weight_kg;

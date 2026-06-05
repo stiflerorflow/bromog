@@ -1,16 +1,21 @@
 :root {
-  --bg: #0f1115;
-  --surface: #181b22;
-  --surface-2: #21252e;
-  --border: #2b303b;
-  --text: #eef1f6;
-  --muted: #9aa3b2;
-  --accent: #4f8cff;
-  --accent-soft: #1d2b46;
-  --good: #45c486;
+  --bg: #0a0c10;
+  --bg-2: #0e1117;
+  --surface: #161a22;
+  --surface-2: #1e2430;
+  --border: #262d3a;
+  --border-soft: #1c222d;
+  --text: #f1f4f9;
+  --muted: #95a1b4;
+  --accent: #5b8cff;
+  --accent-2: #6f9bff;
+  --accent-soft: #16213b;
+  --good: #46cf8b;
   --warn: #e8b73f;
-  --danger: #e5604d;
-  --radius: 14px;
+  --danger: #f0675a;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.22);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -29,8 +34,11 @@ body,
 
 body {
   background: var(--bg);
+  background-image: radial-gradient(120% 60% at 50% -10%, #121826 0%, var(--bg) 55%);
+  background-attachment: fixed;
   color: var(--text);
-  font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
 }
 
@@ -45,16 +53,22 @@ body {
 .scroll {
   flex: 1;
   overflow-y: auto;
-  padding: calc(16px + var(--safe-top)) 16px 96px;
+  padding: calc(18px + var(--safe-top)) 16px 100px;
 }
 
 h1 {
-  font-size: 26px;
+  font-size: 27px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
   margin: 4px 0 2px;
 }
 h2 {
-  font-size: 18px;
-  margin: 24px 0 12px;
+  font-size: 14px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 26px 0 12px;
 }
 .muted {
   color: var(--muted);
@@ -69,6 +83,7 @@ h2 {
   border-radius: var(--radius);
   padding: 16px;
   margin-bottom: 12px;
+  box-shadow: var(--shadow);
 }
 
 .row {
@@ -88,92 +103,111 @@ button {
   color: var(--text);
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  padding: 11px 15px;
+  font-weight: 600;
   cursor: pointer;
+  transition: transform 0.06s ease, filter 0.15s ease, background 0.15s ease;
 }
 button:active {
   transform: scale(0.97);
 }
+button:disabled {
+  opacity: 0.5;
+}
 .btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-  font-weight: 600;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(91, 140, 255, 0.28);
 }
 .btn-block {
   width: 100%;
-  padding: 14px;
+  padding: 15px;
   font-size: 16px;
-  font-weight: 600;
 }
 .btn-ghost {
   background: transparent;
   border-color: transparent;
   color: var(--muted);
+  font-weight: 600;
 }
 .chip {
   font-size: 12px;
-  padding: 3px 9px;
+  font-weight: 600;
+  padding: 4px 10px;
   border-radius: 999px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-2);
   white-space: nowrap;
 }
 .chip-bias {
-  background: #3a2d12;
+  background: #352a12;
   color: var(--warn);
 }
 .chip-good {
-  background: #12331f;
+  background: #10301f;
   color: var(--good);
 }
+.chip-amend {
+  background: #2a2342;
+  color: #c4a7ff;
+}
+.chip-lapsed {
+  background: #3a201d;
+  color: var(--danger);
+}
 
-/* User switch segmented control */
+/* Segmented user switch */
 .seg {
   display: flex;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 4px;
   gap: 4px;
+  box-shadow: var(--shadow);
 }
 .seg button {
   flex: 1;
   border: none;
   background: transparent;
   color: var(--muted);
-  padding: 9px;
-  border-radius: 9px;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: none;
 }
 .seg button.active {
-  background: var(--accent);
-  color: white;
-  font-weight: 600;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(91, 140, 255, 0.3);
 }
 
 /* Stepper for kg / reps */
 .stepper {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .stepper button {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   font-size: 22px;
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--surface-2);
+  box-shadow: none;
 }
 .stepper .val {
-  min-width: 64px;
+  min-width: 62px;
   text-align: center;
 }
 .stepper .val .n {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
 }
 .stepper .val .u {
   font-size: 11px;
@@ -182,27 +216,34 @@ button:active {
 
 .setrow {
   display: grid;
-  grid-template-columns: 28px 1fr 1fr 44px;
+  grid-template-columns: 24px 1fr 1fr 46px;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 10px 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border-soft);
 }
 .setrow .label {
   font-size: 13px;
+  font-weight: 600;
   color: var(--muted);
 }
 .setrow.done .label {
   color: var(--good);
 }
+.setrow button {
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  font-size: 18px;
+}
 .colhead {
   display: grid;
-  grid-template-columns: 28px 1fr 1fr 44px;
-  gap: 10px;
+  grid-template-columns: 24px 1fr 1fr 46px;
+  gap: 8px;
   font-size: 11px;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 /* Bottom navigation */
@@ -210,7 +251,9 @@ button:active {
   position: sticky;
   bottom: 0;
   display: flex;
-  background: var(--surface);
+  background: rgba(14, 17, 23, 0.86);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
   padding-bottom: var(--safe-bottom);
 }
@@ -219,12 +262,22 @@ button:active {
   border: none;
   background: transparent;
   color: var(--muted);
-  padding: 12px 0;
-  font-size: 13px;
+  padding: 9px 0 7px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  box-shadow: none;
+}
+.nav .nav-ico {
+  font-size: 19px;
+  line-height: 1;
 }
 .nav button.active {
-  color: var(--accent);
-  font-weight: 600;
+  color: var(--accent-2);
 }
 
 /* Rest timer overlay */
@@ -242,6 +295,7 @@ button:active {
   gap: 14px;
   max-width: 560px;
   margin: 0 auto;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.3);
 }
 .rest .time {
   font-size: 32px;
@@ -254,53 +308,57 @@ button:active {
 }
 
 .exercise-done {
-  opacity: 0.55;
+  opacity: 0.6;
 }
 .pr-grid {
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 6px 14px;
+  gap: 8px 14px;
   align-items: baseline;
 }
 .note {
   font-size: 12.5px;
-  color: var(--accent);
-  margin-top: 8px;
+  color: var(--accent-2);
+  margin-top: 10px;
 }
 .coach-note {
   white-space: pre-wrap;
-  line-height: 1.5;
+  line-height: 1.55;
+}
+.banner {
+  background: var(--accent-soft);
+  border: 1px solid #2c3f66;
+  border-radius: var(--radius);
+  padding: 13px 15px;
+  margin-bottom: 12px;
+  font-size: 14px;
 }
 
 /* Window-gated home */
 .open-now {
-  border-color: var(--good);
-  background: linear-gradient(180deg, #14241b, var(--surface));
+  border-color: #2c5a40;
+  background: linear-gradient(180deg, #11271c, var(--surface));
+  box-shadow: 0 8px 24px rgba(70, 207, 139, 0.12);
 }
 .petition {
-  margin-top: 12px;
+  margin-top: 14px;
   padding: 4px 0;
   font-style: italic;
   text-decoration: underline;
   color: var(--muted);
-}
-.chip-amend {
-  background: #2c2440;
-  color: #c4a7ff;
-}
-.chip-lapsed {
-  background: #3a1f1c;
-  color: var(--danger);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 /* Amendment session banner */
 .amend-banner {
   margin: 12px 0;
-  padding: 10px 12px;
+  padding: 11px 12px;
   border: 1px solid #6a5a2e;
-  background: #2a2412;
-  color: #e8d8a8;
-  border-radius: 10px;
+  background: linear-gradient(180deg, #2c2614, #221d10);
+  color: #ecdba8;
+  border-radius: var(--radius-sm);
   text-align: center;
   font-size: 13px;
   letter-spacing: 0.02em;
@@ -309,20 +367,22 @@ button:active {
 /* The Skippies Tribunal — a court of law (parchment + engraved serif) */
 .court {
   background: #efe7d4;
+  background-image: radial-gradient(120% 80% at 50% -10%, #f6f0e0, #e7ddc6 70%);
   color: #2a2218;
   font-family: Georgia, "Times New Roman", serif;
   min-height: 100%;
-  padding: calc(28px + var(--safe-top)) 22px calc(28px + var(--safe-bottom));
+  padding: calc(30px + var(--safe-top)) 24px calc(30px + var(--safe-bottom));
   text-align: center;
 }
 .court h1 {
   font-size: 21px;
+  font-weight: 700;
   letter-spacing: 0.03em;
   margin: 8px 0 18px;
 }
 .court p {
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.62;
   margin: 14px 0;
   text-align: left;
 }
@@ -336,20 +396,20 @@ button:active {
   text-align: center;
 }
 .court-seal {
-  width: 72px;
-  height: 72px;
-  margin: 0 auto 6px;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 8px;
   border: 3px double #7a6a44;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 34px;
+  font-size: 36px;
   color: #6b5d44;
   box-shadow: inset 0 0 0 2px #efe7d4, 0 1px 0 #c9bd9c;
 }
 .court-actions {
-  margin-top: 24px;
+  margin-top: 26px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -360,18 +420,11 @@ button:active {
   color: #2a2218;
   font-family: inherit;
   font-size: 15px;
+  box-shadow: none;
 }
 .court-actions .btn-primary {
   background: #3a2f1c;
   border-color: #3a2f1c;
   color: #f1e9d6;
   font-weight: 700;
-}
-.banner {
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  font-size: 14px;
 }

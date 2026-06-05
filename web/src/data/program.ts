@@ -17,7 +17,7 @@ const E = {
   },
   machine_row: {
     key: "machine_row", name: "Machine Row", muscle: "Back",
-    equipment: "machine", restSeconds: 120, increment: 2.5, repTarget: [8, 12],
+    equipment: "machine", restSeconds: 120, increment: 2.5, repTarget: [8, 12], startWeight: 100,
   },
   lat_pulldown: {
     key: "lat_pulldown", name: "Lat Pulldown", muscle: "Back",
@@ -33,7 +33,7 @@ const E = {
   },
   leg_extension: {
     key: "leg_extension", name: "Leg Extension", muscle: "Quads",
-    equipment: "machine", restSeconds: 90, increment: 2.5, repTarget: [10, 15],
+    equipment: "machine", restSeconds: 90, increment: 2.5, repTarget: [10, 15], startWeight: 60,
   },
   rdl: {
     key: "rdl", name: "RDL", muscle: "Hams/Glutes",
@@ -41,15 +41,15 @@ const E = {
   },
   hip_abduction: {
     key: "hip_abduction", name: "Hip Abduction", muscle: "Glutes",
-    equipment: "machine", restSeconds: 90, increment: 2.5, repTarget: [12, 20],
+    equipment: "machine", restSeconds: 90, increment: 2.5, repTarget: [12, 20], startWeight: 50,
   },
   db_lateral_raise: {
     key: "db_lateral_raise", name: "Dumbbell Lateral Raise", muscle: "Side Delts",
-    equipment: "dumbbell", restSeconds: 90, increment: 1, repTarget: [12, 20],
+    equipment: "dumbbell", restSeconds: 90, increment: 1, repTarget: [12, 20], startWeight: 7.5,
   },
   preacher_curl: {
     key: "preacher_curl", name: "Preacher Curl", muscle: "Biceps",
-    equipment: "machine", restSeconds: 90, increment: 2.5, repTarget: [8, 12],
+    equipment: "machine", restSeconds: 90, increment: 2.5, repTarget: [8, 12], startWeight: 10,
   },
   cable_oh_triceps: {
     key: "cable_oh_triceps", name: "Cable Overhead Triceps Extension", muscle: "Triceps",

@@ -19,6 +19,8 @@ export interface Exercise {
   increment: number;
   /** Inclusive rep range used by the double-progression engine. */
   repTarget: [number, number];
+  /** Pre-filled weight (kg) the first time, before any history exists. */
+  startWeight?: number;
 }
 
 /** Validity window for a slot, in local wall-clock hours on a weekday. */

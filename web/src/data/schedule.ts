@@ -89,12 +89,12 @@ export function activeSlot(slots: SlotInfo[]): SlotInfo | null {
   return slots.find((s) => s.state === "ACTIVE") ?? null;
 }
 
-/** Earliest lapsed-and-unamended slot — the one the Tribunal will hear. */
+/** Most recent lapsed-and-unamended slot — the one the Tribunal will hear. */
 export function lapsedAmendable(slots: SlotInfo[]): SlotInfo | null {
   return (
     slots
       .filter((s) => s.state === "LAPSED")
-      .sort((a, b) => a.window.start.getTime() - b.window.start.getTime())[0] ?? null
+      .sort((a, b) => b.window.start.getTime() - a.window.start.getTime())[0] ?? null
   );
 }
 
