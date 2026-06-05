@@ -100,6 +100,14 @@ export const KNOWLEDGE: KnowledgeSection[] = [
         ],
       },
       {
+        title: "Protein Total Is a Lossy Proxy — count gates, not grams",
+        headline:
+          "Daily protein total is a bad measure of what builds muscle. Two people with identical totals can clear wildly different numbers of leucine gates.",
+        body: [
+          `Total daily protein is a proxy that hides the thing that matters. It fails two ways. First, over-dosing per meal: protein above ~30-40g per sitting inflates the total without adding to that meal's muscle-building pulse — it's used for general turnover, not extra growth signal. Second, refractory-period dosing: protein eaten in the 3-4h shadow after a pulse (snacks, bars, a second helping) adds to the total but fires no new gate. So someone eating 70g × 4 meals plus protein snacks posts a huge total but clears the same 4 gates as someone eating 40g × 4 clean meals — the proxy ranks them very differently; the mechanism rates them identical. Worse, a lower total with more clean gates can beat a higher total with fewer. The number you'd optimise (grams) and the thing that actually drives growth (clean, spaced gate-crossings) only correlate by accident — which is exactly why a whole-food vegan can hit a "good" total while clearing almost no gates. Count gates, not grams.`,
+        ],
+      },
+      {
         title: "High-Volume Eating — abundance and a deficit at the same time",
         headline:
           "Eating huge volumes of low-calorie, high-fiber, high-protein whole food lets you feel full while in a deficit. The trick that makes cutting effortless.",
@@ -139,6 +147,15 @@ export const KNOWLEDGE: KnowledgeSection[] = [
         body: [
           `The best exercise is the one you'll perform with high intensity, consistently, without joint grief. Machines and cables are completely legitimate — set quality and the ability to push close to failure safely matter more than free-weight machismo. Pick your A/S-tier movements (the ones that hit the target well and feel good) and stick with them.`,
           `You don't need constant exercise rotation — novelty for novelty's sake adds nothing. Rotating exercises has a real but modest benefit for managing overuse and hitting angles, so swap when something nags or stalls, not on a schedule. Two sets per exercise is the efficient delivery: it lets you do more exercises (more angle/region coverage) for the same volume, keeps each set fresh, and manages fatigue and overuse — without any set being junk.`,
+        ],
+      },
+      {
+        title: "Why 2 Sets Per Exercise — the delivery method, not a magic number",
+        headline:
+          "Two sets per exercise isn't a volume rule — it's how you deliver volume at the highest quality, with the least junk and the lowest injury cost.",
+        body: [
+          `The first set of an exercise is the most stimulating; each subsequent set adds less while adding fatigue. Two sets captures most of the per-exercise stimulus without the junk-volume tail. But the real power is what two-sets lets you do: hit your weekly volume across more exercises instead of more sets-per-exercise. Same 60 sets, but spread over more movements and angles — more complete stimulus, less repetitive stress on any single joint or pattern.`,
+          `It also protects intensity. With only two sets you can't pace yourself — there's no fourth set coming, so you bring real effort to both (first set leaves ~1 in the tank to gauge it, second set matches or pushes). And it manages fatigue and overuse: hammering one movement for five sets is how tendons and joints get wrecked over years; two sets across more exercises spreads the load. So two-sets is a delivery method that simultaneously raises set quality, increases exercise variety, cuts junk volume, and reduces overuse risk — not a claim that "two is the optimal number." The number is the consequence of optimising for quality and fatigue, not the goal itself.`,
         ],
       },
       {
@@ -208,6 +225,36 @@ export const KNOWLEDGE: KnowledgeSection[] = [
         body: [
           `"Hard" is relative to your max, so as fitness improves the same effort produces faster paces automatically — you don't need to force it. For the first ~6 months, run the intervals at a consistent hard-but-controlled effort while three things catch up: your knowledge of your own paces, your watch's calibration to you, and — most importantly — your connective tissue. Tendons and ligaments adapt much slower than your heart, lungs, and muscles, so chasing speed early is how new runners get injured: the fitness writes a cheque the tendons can't yet cash.`,
           `The asymmetry favors patience: pushing pace early has little upside (the 30-year institution doesn't care if you got faster in month two vs month eight) and real downside (an injury that breaks the habit). Let the pace drift up naturally to keep the effort honest, but save deliberate intensity-pushing for after the tissues have had their months to adapt. Thirty years to optimize — there's no rush.`,
+        ],
+      },
+    ],
+  },
+  {
+    id: "framework",
+    title: "Framework",
+    entries: [
+      {
+        title: "The Three Result Metrics — and that they behave differently",
+        headline:
+          "Body fat %, FFMI, and VO2max are three separate dials with three different timescales. Don't manage them as one thing.",
+        body: [
+          `Body fat % moves fast and is driven by the diet/calorie lever — weeks to months, fully in your control via the deficit. FFMI (muscle) is the slow one — years to build, capped by genetics, driven by training and surplus, and it persists well even when untrained. VO2max is the leaky one — it improves fast, plateaus fast, and uniquely decays without ongoing input, so it needs a standing weekly dose rather than a one-off build. Managing them as "fitness" in the aggregate is a mistake because they respond to different levers on different clocks: you cut for body fat, you patiently accumulate for FFMI, and you maintain VO2max with one weekly session. Knowing which dial you're turning, and on what timescale to expect results, stops you from misreading slow FFMI progress as failure or expecting VO2max to stay put on its own.`,
+        ],
+      },
+      {
+        title: "The Spaceship, Not the Bronco — run on understanding, not willpower",
+        headline:
+          "A rigid plan you white-knuckle breaks the moment life bucks. A system built on understanding flexes and survives.",
+        body: [
+          `The bronco is the willpower model: a strict plan held by force, which throws you off the moment life disrupts it, and then the culture blames you for lacking discipline. The spaceship is the understanding model: you learn how the system actually works, set it up to run with your biology and your life rather than against them, and it sustains because it isn't spending willpower it doesn't have. Comfortable high-volume-eating cuts instead of grinding restriction; a training week dosed to recovery instead of maximalist everything; institutions with humane windows instead of rigid appointments. The whole framework is designed so that adherence comes from the structure and the understanding, not from daily heroics. When something feels like it requires willpower, that's the signal the model is wrong, not that you're weak — find the dial you're missing.`,
+        ],
+      },
+      {
+        title: "The Proxy Problem — drop a level below what everyone argues about",
+        headline:
+          "Most fitness debates fight over a visible proxy (daily grams, total sets, body weight) while ignoring the mechanism underneath. The skill is dropping one level down.",
+        body: [
+          `Across nearly every fitness argument, people fixate on a measurable surface proxy and never reach the mechanism it's standing in for. Protein discourse fights over daily grams instead of leucine gates and pulse timing. Volume discourse fights over set counts instead of hard-set quality and recovery. Diet fights over the calorie number instead of satiety, TEF, and the food matrix. The proxy is where the noise concentrates because it's simple and arguable; the mechanism is where the truth lives because it's what the proxy crudely tracks. Once you drop to the mechanism, the proxy fight dissolves — you can see what it was approximating all along, and where it breaks. This is the single most transferable skill in the whole framework: when everyone's arguing about a number, ask what real process that number is a lossy stand-in for, and reason about that.`,
         ],
       },
     ],
