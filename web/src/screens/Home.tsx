@@ -41,8 +41,6 @@ export function Home({ onStart, onResume, onPetition, justFinished }: Props) {
   const [showWeek, setShowWeek] = useState(false);
   const userName = USERS.find((u) => u.id === user)?.name ?? user;
 
-  if (showWeek) return <TheWeekSheet onClose={() => setShowWeek(false)} />;
-
   // Auto-close drafts whose grace period has elapsed (runs on each minute tick).
   useEffect(() => {
     reconcileDrafts(now);
@@ -59,6 +57,9 @@ export function Home({ onStart, onResume, onPetition, justFinished }: Props) {
     setConfirmId(null);
     setSwitching(false);
   }
+
+  // Early returns only AFTER all hooks have run (Rules of Hooks).
+  if (showWeek) return <TheWeekSheet onClose={() => setShowWeek(false)} />;
 
   return (
     <div className="scroll">

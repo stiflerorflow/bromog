@@ -7,6 +7,7 @@ bearer token (APP_TOKEN) so the public App Service URL is not wide open.
 
 from __future__ import annotations
 
+import hmac
 from functools import wraps
 
 from flask import Blueprint, current_app, jsonify, request
@@ -28,7 +29,7 @@ def require_token(fn):
         if Config.APP_TOKEN:
             header = request.headers.get("Authorization", "")
             token = header[7:] if header.startswith("Bearer ") else ""
-            if token != Config.APP_TOKEN:
+            if not hmac.compare_digest(token, Config.APP_TOKEN):
                 return jsonify({"error": "unauthorized"}), 401
         return fn(*args, **kwargs)
 
@@ -153,7 +154,7 @@ def coach_note():
 
     try:
         note = coach.generate_note(kind, user_name, summary)
-    except Exception as exc:  # surface upstream failures without leaking internals
+    except Exception:  # surface upstream failures without leaking internals
         current_app.logger.exception("coach generation failed")
-        return jsonify({"error": "coach generation failed", "detail": str(exc)}), 502
+        return jsonify({"error": "coach generation failed"}), 502
     return jsonify({"note": note})

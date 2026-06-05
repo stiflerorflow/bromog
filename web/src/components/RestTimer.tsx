@@ -35,6 +35,10 @@ export function useRestTimer(): TimerState {
   }, [active]);
 
   const start = useCallback((seconds: number) => {
+    // start() runs inside the set-done tap (a user gesture), so this is where we
+    // unlock/resume the shared AudioContext — Android blocks audio created later
+    // in a bare timer callback.
+    unlockAudio();
     endRef.current = Date.now() + seconds * 1000;
     firedRef.current = false;
     setSecondsLeft(seconds);
@@ -77,6 +81,23 @@ function format(s: number): string {
   return `${m}:${String(r).padStart(2, "0")}`;
 }
 
+// One shared AudioContext, unlocked on a user gesture (set-done tap) and reused
+// for every beep — creating one inside the timer callback is blocked on Android.
+let audioCtx: AudioContext | null = null;
+
+function unlockAudio() {
+  try {
+    const Ctx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    if (!audioCtx) audioCtx = new Ctx();
+    if (audioCtx.state === "suspended") void audioCtx.resume();
+  } catch {
+    /* audio not available */
+  }
+}
+
 function alarm() {
   try {
     navigator.vibrate?.([200, 100, 200]);
@@ -84,9 +105,9 @@ function alarm() {
     /* ignore */
   }
   try {
-    const Ctx =
-      window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new Ctx();
+    if (!audioCtx) return;
+    if (audioCtx.state === "suspended") void audioCtx.resume();
+    const ctx = audioCtx;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -97,7 +118,6 @@ function alarm() {
     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
     osc.start();
     osc.stop(ctx.currentTime + 0.5);
-    setTimeout(() => ctx.close(), 700);
   } catch {
     /* audio not available */
   }

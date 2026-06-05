@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { currentUser, getSessions } from "../data/store";
-import { lapsedAmendable, weekId, weekSlots } from "../data/schedule";
+import { lapsedAmendable, weekId, weekSlots, type SlotInfo } from "../data/schedule";
 import { useStore } from "../components/useStore";
 import { useNow } from "../components/useNow";
 
@@ -16,8 +16,11 @@ export function Tribunal({ onProceed, onDismiss }: Props) {
   const user = useStore(currentUser);
   const sessions = useStore(() => getSessions(user));
   const now = useNow();
-  const lapsed = lapsedAmendable(weekSlots(sessions, now, null));
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  // Lock onto the case at petition time so a mid-flow clock tick can't switch which
+  // lapsed session is being amended (the applicant confessed to a specific one).
+  const [chosen, setChosen] = useState<SlotInfo | null>(null);
+  const lapsed = chosen ?? lapsedAmendable(weekSlots(sessions, now, null));
 
   // No matter before the court — out of window with a clean week.
   if (!lapsed) {
@@ -58,7 +61,13 @@ export function Tribunal({ onProceed, onDismiss }: Props) {
         <p>Nevertheless, an applicant stands before the bench. Gym bag in evidence. Intent apparent.</p>
         <p>How does the applicant wish to proceed?</p>
         <div className="court-actions">
-          <button className="btn-primary btn-block" onClick={() => setStep(2)}>
+          <button
+            className="btn-primary btn-block"
+            onClick={() => {
+              setChosen(lapsed);
+              setStep(2);
+            }}
+          >
             I petition the Court
           </button>
           <button className="btn-block" onClick={onDismiss}>

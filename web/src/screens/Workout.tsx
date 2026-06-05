@@ -40,22 +40,24 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
     [workout, history]
   );
 
-  // Draft identity (id + start time) persists across resume.
-  const meta = useRef(loadMeta(workoutKey, user));
+  // Draft identity (id + start time) — computed once per mount, not every render.
+  const metaRef = useRef<ReturnType<typeof loadMeta>>();
+  const meta = metaRef.current ?? (metaRef.current = loadMeta(workoutKey, user));
+  const finishing = useRef(false);
   // Amendment status: set when entering via the Tribunal, preserved across resume
   // by reading it back off an in-progress draft.
-  const isAmendment = amendment || meta.current.draft?.skippies || false;
+  const isAmendment = amendment || meta.draft?.skippies || false;
 
   const [sets, setSets] = useState<Record<string, SetState>>(() =>
-    seed(workout.exercises, suggestions, meta.current.draft)
+    seed(workout.exercises, suggestions, meta.draft)
   );
 
   function persist(next: Record<string, SetState>) {
     const draft: Draft = {
-      id: meta.current.id,
+      id: meta.id,
       user_id: user,
       workout_key: workoutKey,
-      started_at: meta.current.startedAt,
+      started_at: meta.startedAt,
       skippies: isAmendment,
       sets: {},
     };
@@ -111,6 +113,8 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
   );
 
   function finish() {
+    if (finishing.current) return; // guard against a double-tap committing twice
+    finishing.current = true;
     const loggedSets: LoggedSet[] = workout.exercises.flatMap((ex) =>
       [1, 2]
         .map((i) => ({ ex, i, st: sets[setKey(ex.key, i)] }))
@@ -124,16 +128,16 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
         }))
     );
     const session: Session = {
-      id: meta.current.id,
+      id: meta.id,
       user_id: user,
       workout_key: workoutKey,
-      week_id: isoWeek(new Date(meta.current.startedAt)),
+      week_id: isoWeek(new Date(meta.startedAt)),
       slot_id: workout.slotId,
-      started_at: meta.current.startedAt,
+      started_at: meta.startedAt,
       finished_at: new Date().toISOString(),
       status: "LOGGED",
       skippies: isAmendment,
-      skippies_confessed_at: isAmendment ? meta.current.startedAt : null,
+      skippies_confessed_at: isAmendment ? meta.startedAt : null,
       sets: loggedSets,
     };
     commitSession(session);

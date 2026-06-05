@@ -132,12 +132,13 @@ export async function flushQueue(): Promise<void> {
   if (flushing || !apiConfigured) return;
   flushing = true;
   try {
-    let queue = read<Session[]>(K.queue, []);
-    for (const session of [...queue]) {
+    // Snapshot decides WHAT to send; the persisted queue is always re-read fresh
+    // before each write so a session enqueued mid-flush isn't clobbered.
+    for (const session of read<Session[]>(K.queue, [])) {
       try {
         await putSession(session);
-        queue = queue.filter((s) => s.id !== session.id);
-        write(K.queue, queue);
+        const remaining = read<Session[]>(K.queue, []).filter((s) => s.id !== session.id);
+        write(K.queue, remaining);
         notify();
       } catch {
         break; // offline / server down — try again later
@@ -155,7 +156,11 @@ export async function syncDown(userId: UserId = currentUser()): Promise<void> {
     const remote = await fetchSessions(userId);
     const local = getSessions(userId);
     const byId = new Map<string, Session>();
-    for (const s of [...remote, ...local]) byId.set(s.id, s); // local wins on conflict
+    for (const s of remote) byId.set(s.id, s);
+    for (const s of local) {
+      const other = byId.get(s.id);
+      byId.set(s.id, other ? mergeSession(s, other) : s); // local first → wins ties
+    }
     saveSessions(userId, [...byId.values()].sort((a, b) => (a.started_at < b.started_at ? 1 : -1)));
     notify();
   } catch {
@@ -163,13 +168,25 @@ export async function syncDown(userId: UserId = currentUser()): Promise<void> {
   }
 }
 
+/** On id conflict, keep the more-complete record (LOGGED over PARTIAL; else later finish). */
+function mergeSession(local: Session, remote: Session): Session {
+  const rank = (s: Session) => (s.status === "LOGGED" ? 2 : s.finished_at ? 1 : 0);
+  if (rank(local) !== rank(remote)) return rank(local) > rank(remote) ? local : remote;
+  return (local.finished_at ?? "") >= (remote.finished_at ?? "") ? local : remote;
+}
+
 /**
  * Auto-close a stale in-progress draft. A session started in-window may finish up
  * to GRACE_MIN after window_end; past that it's committed as PARTIAL (or discarded
- * if nothing was logged — absence is the record).
+ * if nothing was logged — absence is the record). Runs for every roster user so a
+ * non-active user's stale draft can't linger and resurrect as ACTIVE on switch.
  */
 export function reconcileDrafts(now = new Date()): void {
-  const draft = getDraft();
+  for (const u of USERS) reconcileUserDraft(u.id, now);
+}
+
+function reconcileUserDraft(userId: UserId, now: Date): void {
+  const draft = getDraft(userId);
   if (!draft) return;
   const workout = getWorkout(draft.workout_key);
   if (!workout) return;
@@ -178,7 +195,7 @@ export function reconcileDrafts(now = new Date()): void {
 
   const sets = Object.values(draft.sets);
   if (sets.length === 0) {
-    clearDraft();
+    clearDraft(userId);
     return;
   }
   commitSession({

@@ -24,4 +24,18 @@ def create_app(database_url: str | None = None) -> Flask:
 
     app.register_blueprint(api)
     app.register_blueprint(pages)
+
+    # CORS: the Capacitor Android WebView serves the app from https://localhost and
+    # fetches this API cross-origin with an Authorization header — which triggers an
+    # OPTIONS preflight that must carry CORS headers or the WebView blocks the request
+    # (sync + coach would silently fail). The bearer token still guards every call, so
+    # a wildcard origin is acceptable here.
+    @app.after_request
+    def add_cors_headers(resp):  # type: ignore[no-untyped-def]
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, OPTIONS"
+        resp.headers["Access-Control-Max-Age"] = "86400"
+        return resp
+
     return app

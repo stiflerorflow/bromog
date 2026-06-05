@@ -53,6 +53,15 @@ def test_health_is_open(client):
     assert resp.get_json()["status"] == "ok"
 
 
+def test_cors_headers_present(client):
+    # The Capacitor WebView needs these or the cross-origin preflight is blocked.
+    get_resp = client.get("/api/health")
+    assert get_resp.headers.get("Access-Control-Allow-Origin") == "*"
+    pre = client.options("/api/sessions/x")
+    assert pre.headers.get("Access-Control-Allow-Origin") == "*"
+    assert "Authorization" in pre.headers.get("Access-Control-Allow-Headers", "")
+
+
 def test_users_seeded(client):
     resp = client.get("/api/users", headers=_auth())
     assert resp.status_code == 200

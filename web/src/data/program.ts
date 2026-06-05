@@ -119,9 +119,3 @@ const ALL_EXERCISES: Record<string, Exercise> = E;
 export function getExercise(key: string): Exercise | undefined {
   return ALL_EXERCISES[key];
 }
-
-/** Workout whose day matches today, else null (for the "today" highlight). */
-export function todaysWorkout(date = new Date()): Workout | null {
-  const day = date.toLocaleDateString("en-US", { weekday: "long" });
-  return WORKOUTS.find((w) => w.day === day) ?? null;
-}

@@ -1,8 +1,8 @@
 """Gunicorn config for the Bromog backend.
 
-Bind to the port App Service provides via $PORT (defaults to 8000 locally).
-A single worker with a couple of threads is plenty for a 3-person app and keeps
-the SQLite-on-/home story simple (no cross-process write contention).
+Bind to the port the platform provides via $PORT (defaults to 8000 locally).
+A single worker with a few threads is plenty for a 3-person app and keeps the
+Postgres connection pool small (SQLAlchemy QueuePool, pre-ping + recycle).
 """
 
 import os

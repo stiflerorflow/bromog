@@ -118,15 +118,21 @@ SEED_USERS = [
 
 
 def make_engine(database_url: str):
+    # Neon's dashboard hands out `postgres://` URLs, which SQLAlchemy 2.0 no longer
+    # recognises as a dialect — normalise to `postgresql://`.
+    if database_url.startswith("postgres://"):
+        database_url = "postgresql://" + database_url[len("postgres://") :]
+
     connect_args = {}
     kwargs = {"future": True}
     if database_url.startswith("sqlite"):
         # Flask serves requests across threads; allow the connection to be shared.
         connect_args["check_same_thread"] = False
     else:
-        # Postgres (e.g. Neon): validate pooled connections so a server-idled
-        # connection is transparently replaced instead of raising mid-request.
+        # Postgres (e.g. Neon): validate pooled connections and recycle them so a
+        # server-idled connection is replaced instead of raising mid-request.
         kwargs["pool_pre_ping"] = True
+        kwargs["pool_recycle"] = 300
     return create_engine(database_url, connect_args=connect_args, **kwargs)
 
 
