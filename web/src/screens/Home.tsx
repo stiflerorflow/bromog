@@ -45,12 +45,9 @@ export function Home({ onStart, onResume, onPetition }: Props) {
 
   return (
     <div className="scroll">
-      <h1>Bromog</h1>
-      <p className="muted small" style={{ marginTop: 0 }}>
-        Two sets per exercise · kilograms · sanctioned hours only
-      </p>
+      <h1 className="brand">BROMOG</h1>
 
-      <div className="seg" style={{ margin: "14px 0 8px" }}>
+      <div className="seg" style={{ margin: "6px 0 8px" }}>
         {USERS.map((u) => (
           <button key={u.id} className={u.id === user ? "active" : ""} onClick={() => setUser(u.id)}>
             {u.name}

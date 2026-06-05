@@ -62,6 +62,20 @@ h1 {
   letter-spacing: -0.02em;
   margin: 4px 0 2px;
 }
+
+/* Stylised wordmark on Home */
+.brand {
+  font-size: 44px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  margin: 8px 0 18px;
+  background: linear-gradient(105deg, #7aa2ff 0%, #9a7bff 45%, #46cf8b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 18px rgba(122, 162, 255, 0.32));
+}
 h2 {
   font-size: 14px;
   font-weight: 650;
