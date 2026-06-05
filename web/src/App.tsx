@@ -5,10 +5,11 @@ import { Stats } from "./screens/Stats";
 import { Coach } from "./screens/Coach";
 import { Tribunal } from "./screens/Tribunal";
 import { Onboarding } from "./screens/Onboarding";
+import { Knowledge } from "./screens/Knowledge";
 import { getChosenUser, getDraft } from "./data/store";
 import { useStore } from "./components/useStore";
 
-type Tab = "home" | "stats" | "coach";
+type Tab = "home" | "stats" | "coach" | "knowledge";
 type View =
   | { kind: "tab"; tab: Tab }
   | { kind: "workout"; workoutKey: string; amendment?: boolean }
@@ -71,6 +72,7 @@ export function App() {
       )}
       {tab === "stats" && <Stats />}
       {tab === "coach" && <Coach />}
+      {tab === "knowledge" && <Knowledge />}
 
       <nav className="nav">
         {(
@@ -78,6 +80,7 @@ export function App() {
             ["home", "🏋️", "Workout"],
             ["stats", "📈", "Stats"],
             ["coach", "💬", "Coach"],
+            ["knowledge", "📚", "Learn"],
           ] as [Tab, string, string][]
         ).map(([t, icon, label]) => (
           <button

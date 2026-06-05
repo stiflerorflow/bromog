@@ -509,6 +509,76 @@ button:disabled {
   letter-spacing: 0.01em;
 }
 
+/* Knowledge cards (expandable) */
+.k-section {
+  margin: 28px 0 12px;
+  color: var(--accent-2);
+}
+.k-card {
+  padding: 0;
+  overflow: hidden;
+}
+.k-head {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 16px 14px;
+}
+.k-text {
+  flex: 1;
+  min-width: 0;
+}
+.k-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  margin-bottom: 6px;
+  line-height: 1.35;
+}
+.k-headline {
+  font-size: 15.5px;
+  font-weight: 650;
+  line-height: 1.45;
+  color: var(--text);
+}
+.k-chevron {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--accent-2);
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.k-card.open .k-chevron {
+  background: var(--accent);
+  color: #fff;
+}
+.k-body {
+  padding: 2px 14px 16px;
+  border-top: 1px solid var(--border-soft);
+  margin-top: -2px;
+}
+.k-body p {
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: #cdd5e2;
+  margin: 14px 0 0;
+}
+
 /* The Week info sheet */
 .week-sheet h1 {
   font-size: 24px;
