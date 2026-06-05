@@ -79,6 +79,31 @@ def test_upsert_is_idempotent(client):
     assert len(listing[0]["sets"]) == 2
 
 
+def test_skippies_amendment_round_trips(client):
+    sid = str(uuid.uuid4())
+    payload = _session_payload(
+        week_id="2026-W23",
+        slot_id="S1_MON",
+        status="LOGGED",
+        skippies=True,
+        skippies_confessed_at="2026-06-01T21:00:00Z",
+    )
+    assert client.put(f"/api/sessions/{sid}", json=payload, headers=_auth()).status_code == 200
+    got = client.get("/api/sessions?user=stephen", headers=_auth()).get_json()[0]
+    assert got["skippies"] is True
+    assert got["week_id"] == "2026-W23"
+    assert got["slot_id"] == "S1_MON"
+    assert got["skippies_confessed_at"] == "2026-06-01T21:00:00Z"
+
+
+def test_defaults_when_skippies_fields_absent(client):
+    sid = str(uuid.uuid4())
+    assert client.put(f"/api/sessions/{sid}", json=_session_payload(), headers=_auth()).status_code == 200
+    got = client.get("/api/sessions?user=stephen", headers=_auth()).get_json()[0]
+    assert got["skippies"] is False
+    assert got["status"] == "LOGGED"
+
+
 def test_upsert_rejects_unknown_user(client):
     sid = str(uuid.uuid4())
     resp = client.put(

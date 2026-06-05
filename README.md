@@ -180,6 +180,20 @@ link.)
 
 ---
 
+## Time-bound sessions & the Skippies Tribunal
+
+Each workout is a **slot** with a hard validity window on its weekday
+([program.ts](web/src/data/program.ts)): Mon 16–23, Wed 05–12, Thu 16–23, Sat 12–18 (local
+wall-clock). In-window, Home opens the session for frictionless logging. Out of window, a
+**lapsed** slot can only be performed by passing the **Skippies Tribunal**
+([Tribunal.tsx](web/src/screens/Tribunal.tsx)) — a ≥3-tap mock-court flow that brands the
+workout a **Skippies Amendment Session** (`skippies=true`, ✨ in history) with full
+progression credit. A clean week out of window is refused. The state machine lives in
+[schedule.ts](web/src/data/schedule.ts) (pure + unit-tested), evaluated per current user;
+amendments are only available until the end of the ISO week. One local notification fires at
+each window-start, and nothing else. Tip: append `?now=2026-06-01T18:30` in `npm run dev` to
+freeze the clock and exercise any state.
+
 ## How progressive overload works
 
 Per exercise, the app looks at your most recent session for that movement

@@ -75,8 +75,13 @@ def upsert_session(session_id: str):
         else:
             ws.user_id = user_id
             ws.workout_key = workout_key
+        ws.week_id = data.get("week_id")
+        ws.slot_id = data.get("slot_id")
         ws.started_at = data.get("started_at") or ws.started_at
         ws.finished_at = data.get("finished_at")
+        ws.status = data.get("status") or "LOGGED"
+        ws.skippies = bool(data.get("skippies", False))
+        ws.skippies_confessed_at = data.get("skippies_confessed_at")
 
         # Replace sets wholesale (immutable record; replay = same content).
         ws.sets.clear()

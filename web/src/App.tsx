@@ -3,25 +3,41 @@ import { Home } from "./screens/Home";
 import { Workout } from "./screens/Workout";
 import { Stats } from "./screens/Stats";
 import { Coach } from "./screens/Coach";
+import { Tribunal } from "./screens/Tribunal";
 import { getDraft } from "./data/store";
 
 type Tab = "home" | "stats" | "coach";
-type View = { kind: "tab"; tab: Tab } | { kind: "workout"; workoutKey: string };
+type View =
+  | { kind: "tab"; tab: Tab }
+  | { kind: "workout"; workoutKey: string; amendment?: boolean }
+  | { kind: "tribunal" };
 
 export function App() {
   const [view, setView] = useState<View>({ kind: "tab", tab: "home" });
-  const [justFinished, setJustFinished] = useState(false);
+  const [finished, setFinished] = useState<null | "normal" | "amendment">(null);
 
   if (view.kind === "workout") {
     return (
       <div className="app">
         <Workout
           workoutKey={view.workoutKey}
+          amendment={view.amendment}
           onExit={() => setView({ kind: "tab", tab: "home" })}
           onFinish={() => {
-            setJustFinished(true);
+            setFinished(view.amendment ? "amendment" : "normal");
             setView({ kind: "tab", tab: "stats" });
           }}
+        />
+      </div>
+    );
+  }
+
+  if (view.kind === "tribunal") {
+    return (
+      <div className="app">
+        <Tribunal
+          onProceed={(workoutKey) => setView({ kind: "workout", workoutKey, amendment: true })}
+          onDismiss={() => setView({ kind: "tab", tab: "home" })}
         />
       </div>
     );
@@ -37,13 +53,18 @@ export function App() {
             const draft = getDraft();
             if (draft) setView({ kind: "workout", workoutKey: draft.workout_key });
           }}
+          onPetition={() => setView({ kind: "tribunal" })}
         />
       )}
       {tab === "stats" && (
         <>
-          {justFinished && (
+          {finished && (
             <div style={{ padding: "calc(16px + var(--safe-top)) 16px 0" }}>
-              <div className="banner">Workout saved 💪 Check your PRs below, or ask the Coach.</div>
+              <div className="banner">
+                {finished === "amendment"
+                  ? "Order satisfied. The record stands amended. This Court is adjourned. (The export remembers.)"
+                  : "Workout saved 💪 Check your PRs below, or ask the Coach."}
+              </div>
             </div>
           )}
           <Stats />
@@ -57,7 +78,7 @@ export function App() {
             key={t}
             className={t === tab ? "active" : ""}
             onClick={() => {
-              setJustFinished(false);
+              setFinished(null);
               setView({ kind: "tab", tab: t });
             }}
           >

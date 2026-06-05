@@ -4,12 +4,15 @@ import { suggest } from "../data/overload";
 import type { Draft } from "../data/store";
 import { commitSession, currentUser, getDraft, getSessions, saveDraft } from "../data/store";
 import { uuid } from "../data/uuid";
+import { isoWeek } from "../data/stats";
 import { RestBar, useRestTimer } from "../components/RestTimer";
 import { Stepper } from "../components/Stepper";
 import type { Exercise, LoggedSet, Session } from "../data/types";
 
 interface Props {
   workoutKey: string;
+  /** Performed out of window under the Tribunal — branded a Skippies Amendment Session. */
+  amendment?: boolean;
   onExit: () => void;
   onFinish: (session: Session) => void;
 }
@@ -22,7 +25,7 @@ interface SetState {
 
 const setKey = (exKey: string, idx: number) => `${exKey}:${idx}`;
 
-export function Workout({ workoutKey, onExit, onFinish }: Props) {
+export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
   const workout = getWorkout(workoutKey)!;
   const user = currentUser();
   const timer = useRestTimer();
@@ -37,6 +40,9 @@ export function Workout({ workoutKey, onExit, onFinish }: Props) {
 
   // Draft identity (id + start time) persists across resume.
   const meta = useRef(loadMeta(workoutKey, user));
+  // Amendment status: set when entering via the Tribunal, preserved across resume
+  // by reading it back off an in-progress draft.
+  const isAmendment = amendment || meta.current.draft?.skippies || false;
 
   const [sets, setSets] = useState<Record<string, SetState>>(() =>
     seed(workout.exercises, suggestions, meta.current.draft)
@@ -48,6 +54,7 @@ export function Workout({ workoutKey, onExit, onFinish }: Props) {
       user_id: user,
       workout_key: workoutKey,
       started_at: meta.current.startedAt,
+      skippies: isAmendment,
       sets: {},
     };
     for (const [k, v] of Object.entries(next)) {
@@ -111,8 +118,13 @@ export function Workout({ workoutKey, onExit, onFinish }: Props) {
       id: meta.current.id,
       user_id: user,
       workout_key: workoutKey,
+      week_id: isoWeek(new Date(meta.current.startedAt)),
+      slot_id: workout.slotId,
       started_at: meta.current.startedAt,
       finished_at: new Date().toISOString(),
+      status: "LOGGED",
+      skippies: isAmendment,
+      skippies_confessed_at: isAmendment ? meta.current.startedAt : null,
       sets: loggedSets,
     };
     commitSession(session);
@@ -130,6 +142,12 @@ export function Workout({ workoutKey, onExit, onFinish }: Props) {
             {hideDone ? "Show done" : "Hide done"}
           </button>
         </div>
+
+        {isAmendment && (
+          <div className="amend-banner">
+            ⚖️ AMENDMENT SESSION — performed under supervision of the Court ⚖️
+          </div>
+        )}
 
         <h1 style={{ marginTop: 4 }}>{workout.day}</h1>
         <div className="muted small">

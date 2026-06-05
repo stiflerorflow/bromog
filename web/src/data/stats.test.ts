@@ -7,8 +7,13 @@ function session(id: string, date: string, weight: number, reps: number): Sessio
     id,
     user_id: "stephen",
     workout_key: "monday",
+    week_id: "2026-W23",
+    slot_id: "S1_MON",
     started_at: date,
     finished_at: date,
+    status: "LOGGED",
+    skippies: false,
+    skippies_confessed_at: null,
     sets: [
       { exercise_key: "rdl", set_index: 1, weight_kg: weight, reps, done_at: date },
       { exercise_key: "rdl", set_index: 2, weight_kg: weight, reps: reps - 1, done_at: date },

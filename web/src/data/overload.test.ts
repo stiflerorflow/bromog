@@ -10,8 +10,13 @@ function session(weight: number, reps: [number, number], date = "2026-06-01T18:0
     id: date,
     user_id: "stephen",
     workout_key: "monday",
+    week_id: "2026-W23",
+    slot_id: "S1_MON",
     started_at: date,
     finished_at: date,
+    status: "LOGGED",
+    skippies: false,
+    skippies_confessed_at: null,
     sets: [
       { exercise_key: "machine_press", set_index: 1, weight_kg: weight, reps: reps[0], done_at: date },
       { exercise_key: "machine_press", set_index: 2, weight_kg: weight, reps: reps[1], done_at: date },

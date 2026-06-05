@@ -86,7 +86,7 @@ export function weeklyVolume(sessions: Session[]): { week: string; sets: number 
     .map(([week, sets]) => ({ week, sets }));
 }
 
-function isoWeek(d: Date): string {
+export function isoWeek(d: Date): string {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const dayNum = date.getUTCDay() || 7;
   date.setUTCDate(date.getUTCDate() + 4 - dayNum);

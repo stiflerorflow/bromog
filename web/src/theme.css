@@ -271,6 +271,102 @@ button:active {
   white-space: pre-wrap;
   line-height: 1.5;
 }
+
+/* Window-gated home */
+.open-now {
+  border-color: var(--good);
+  background: linear-gradient(180deg, #14241b, var(--surface));
+}
+.petition {
+  margin-top: 12px;
+  padding: 4px 0;
+  font-style: italic;
+  text-decoration: underline;
+  color: var(--muted);
+}
+.chip-amend {
+  background: #2c2440;
+  color: #c4a7ff;
+}
+.chip-lapsed {
+  background: #3a1f1c;
+  color: var(--danger);
+}
+
+/* Amendment session banner */
+.amend-banner {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #6a5a2e;
+  background: #2a2412;
+  color: #e8d8a8;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+/* The Skippies Tribunal — a court of law (parchment + engraved serif) */
+.court {
+  background: #efe7d4;
+  color: #2a2218;
+  font-family: Georgia, "Times New Roman", serif;
+  min-height: 100%;
+  padding: calc(28px + var(--safe-top)) 22px calc(28px + var(--safe-bottom));
+  text-align: center;
+}
+.court h1 {
+  font-size: 21px;
+  letter-spacing: 0.03em;
+  margin: 8px 0 18px;
+}
+.court p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 14px 0;
+  text-align: left;
+}
+.court strong {
+  letter-spacing: 0.02em;
+}
+.court .court-aside {
+  font-style: italic;
+  color: #6b5d44;
+  font-size: 14px;
+  text-align: center;
+}
+.court-seal {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 6px;
+  border: 3px double #7a6a44;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  color: #6b5d44;
+  box-shadow: inset 0 0 0 2px #efe7d4, 0 1px 0 #c9bd9c;
+}
+.court-actions {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.court-actions button {
+  background: #e3d8bf;
+  border: 1px solid #b7a780;
+  color: #2a2218;
+  font-family: inherit;
+  font-size: 15px;
+}
+.court-actions .btn-primary {
+  background: #3a2f1c;
+  border-color: #3a2f1c;
+  color: #f1e9d6;
+  font-weight: 700;
+}
 .banner {
   background: var(--accent-soft);
   border: 1px solid var(--accent);

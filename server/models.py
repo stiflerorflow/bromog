@@ -11,6 +11,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from sqlalchemy import (
+    Boolean,
     Float,
     ForeignKey,
     Integer,
@@ -47,8 +48,13 @@ class WorkoutSession(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)  # client UUID
     user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), index=True)
     workout_key: Mapped[str] = mapped_column(String, nullable=False)
+    week_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    slot_id: Mapped[str | None] = mapped_column(String, nullable=True)
     started_at: Mapped[str] = mapped_column(String, nullable=False)  # ISO-8601
     finished_at: Mapped[str | None] = mapped_column(String, nullable=True)
+    status: Mapped[str] = mapped_column(String, default="LOGGED")  # LOGGED | PARTIAL
+    skippies: Mapped[bool] = mapped_column(Boolean, default=False)
+    skippies_confessed_at: Mapped[str | None] = mapped_column(String, nullable=True)
     synced_at: Mapped[str] = mapped_column(
         String, default=lambda: datetime.now(timezone.utc).isoformat()
     )
@@ -64,8 +70,13 @@ class WorkoutSession(Base):
             "id": self.id,
             "user_id": self.user_id,
             "workout_key": self.workout_key,
+            "week_id": self.week_id,
+            "slot_id": self.slot_id,
             "started_at": self.started_at,
             "finished_at": self.finished_at,
+            "status": self.status,
+            "skippies": self.skippies,
+            "skippies_confessed_at": self.skippies_confessed_at,
             "sets": [s.to_dict() for s in self.sets],
         }
 

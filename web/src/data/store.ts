@@ -1,6 +1,8 @@
 import { apiConfigured, fetchSessions, putSession } from "./api";
 import type { LoggedSet, Session, UserId } from "./types";
-import { USERS } from "./program";
+import { USERS, getWorkout } from "./program";
+import { GRACE_MIN, slotWindow } from "./schedule";
+import { isoWeek } from "./stats";
 
 // Local-first store. Everything lives in localStorage so the app is instant and
 // works with zero signal. Finished sessions are pushed to the backend through a
@@ -93,6 +95,8 @@ export interface Draft {
   user_id: UserId;
   workout_key: string;
   started_at: string;
+  /** True when this draft is a Skippies Amendment Session (started via the Tribunal). */
+  skippies: boolean;
   sets: Record<string, LoggedSet>; // key: `${exercise_key}:${set_index}`
 }
 
@@ -155,8 +159,42 @@ export async function syncDown(userId: UserId = currentUser()): Promise<void> {
   }
 }
 
-/** Call once on app start: push anything pending and pull remote history. */
+/**
+ * Auto-close a stale in-progress draft. A session started in-window may finish up
+ * to GRACE_MIN after window_end; past that it's committed as PARTIAL (or discarded
+ * if nothing was logged — absence is the record).
+ */
+export function reconcileDrafts(now = new Date()): void {
+  const draft = getDraft();
+  if (!draft) return;
+  const workout = getWorkout(draft.workout_key);
+  if (!workout) return;
+  const end = slotWindow(workout, new Date(draft.started_at)).end;
+  if (now.getTime() <= end.getTime() + GRACE_MIN * 60_000) return;
+
+  const sets = Object.values(draft.sets);
+  if (sets.length === 0) {
+    clearDraft();
+    return;
+  }
+  commitSession({
+    id: draft.id,
+    user_id: draft.user_id,
+    workout_key: draft.workout_key,
+    week_id: isoWeek(new Date(draft.started_at)),
+    slot_id: workout.slotId,
+    started_at: draft.started_at,
+    finished_at: now.toISOString(),
+    status: "PARTIAL",
+    skippies: draft.skippies,
+    skippies_confessed_at: draft.skippies ? draft.started_at : null,
+    sets,
+  });
+}
+
+/** Call once on app start: close stale drafts, push pending, pull remote history. */
 export function bootSync() {
+  reconcileDrafts();
   void flushQueue();
   void syncDown();
 }

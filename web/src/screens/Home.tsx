@@ -1,35 +1,58 @@
-import { USERS, WORKOUTS, todaysWorkout, getWorkout } from "../data/program";
-import { currentUser, getDraft, getSessions, pendingSyncCount, setUser } from "../data/store";
+import { useEffect } from "react";
+import { USERS, getWorkout } from "../data/program";
+import {
+  currentUser,
+  getDraft,
+  getSessions,
+  pendingSyncCount,
+  reconcileDrafts,
+  setUser,
+} from "../data/store";
 import { apiConfigured } from "../data/api";
+import {
+  activeSlot,
+  clockLabel,
+  lapsedAmendable,
+  nextUpcoming,
+  weekSlots,
+  type SlotInfo,
+} from "../data/schedule";
 import { useStore } from "../components/useStore";
-import type { Workout } from "../data/types";
+import { useNow } from "../components/useNow";
 
 interface Props {
   onStart: (workoutKey: string) => void;
   onResume: () => void;
+  onPetition: () => void;
 }
 
-export function Home({ onStart, onResume }: Props) {
+export function Home({ onStart, onResume, onPetition }: Props) {
   const user = useStore(currentUser);
   const draft = useStore(getDraft);
   const sessions = useStore(() => getSessions(user));
   const pending = useStore(pendingSyncCount);
-  const today = todaysWorkout();
+  const now = useNow();
+
+  // Auto-close drafts whose grace period has elapsed (runs on each minute tick).
+  useEffect(() => {
+    reconcileDrafts(now);
+  }, [now]);
+
+  const slots = weekSlots(sessions, now, draft?.workout_key ?? null);
+  const active = activeSlot(slots);
+  const lapsed = lapsedAmendable(slots);
+  const next = nextUpcoming(slots);
 
   return (
     <div className="scroll">
       <h1>Bromog</h1>
       <p className="muted small" style={{ marginTop: 0 }}>
-        Two sets per exercise · kilograms · clean logging
+        Two sets per exercise · kilograms · sanctioned hours only
       </p>
 
       <div className="seg" style={{ margin: "14px 0 8px" }}>
         {USERS.map((u) => (
-          <button
-            key={u.id}
-            className={u.id === user ? "active" : ""}
-            onClick={() => setUser(u.id)}
-          >
+          <button key={u.id} className={u.id === user ? "active" : ""} onClick={() => setUser(u.id)}>
             {u.name}
           </button>
         ))}
@@ -39,7 +62,7 @@ export function Home({ onStart, onResume }: Props) {
         <p className="muted small">{pending} session{pending > 1 ? "s" : ""} waiting to sync…</p>
       )}
 
-      {draft && (
+      {draft ? (
         <div className="banner row between">
           <div>
             <strong>Workout in progress</strong>
@@ -49,26 +72,60 @@ export function Home({ onStart, onResume }: Props) {
             Resume
           </button>
         </div>
+      ) : active ? (
+        <div className="card open-now">
+          <div className="row between">
+            <strong>⚡ {active.workout.day} session is open</strong>
+            <span className="chip chip-good">closes {clockLabel(active.window.end)}</span>
+          </div>
+          <div className="muted small" style={{ margin: "4px 0 12px" }}>
+            {active.workout.exercises.length * 2} sets · {active.workout.bias}
+          </div>
+          <button className="btn-primary btn-block" onClick={() => onStart(active.workout.key)}>
+            Enter session
+          </button>
+        </div>
+      ) : (
+        <div className="card">
+          {next ? (
+            <>
+              <div className="muted small">Next sanctioned window</div>
+              <strong>
+                {next.workout.day} {next.workout.time}
+              </strong>
+              <div className="muted small">
+                {next.workout.exercises.length * 2} sets · {next.workout.bias}
+              </div>
+            </>
+          ) : (
+            <div className="muted">All sessions of this week stand complete. ⚖️</div>
+          )}
+          {lapsed && (
+            <button className="btn-ghost petition" onClick={onPetition}>
+              petition the Tribunal…
+            </button>
+          )}
+        </div>
       )}
 
-      <h2>Start a workout</h2>
-      {WORKOUTS.map((w) => (
-        <WorkoutCard
-          key={w.key}
-          workout={w}
-          isToday={today?.key === w.key}
-          disabled={!!draft && draft.workout_key !== w.key}
-          onStart={() => onStart(w.key)}
-        />
+      <h2>This week</h2>
+      {slots.map((s) => (
+        <SlotRow key={s.workout.slotId} slot={s} />
       ))}
 
       <h2>Recent</h2>
-      {sessions.length === 0 && <p className="muted small">No workouts logged yet.</p>}
+      {sessions.length === 0 && <p className="muted small">No sessions logged yet.</p>}
       {sessions.slice(0, 8).map((s) => (
         <div key={s.id} className="card row between">
           <div>
-            <strong>{getWorkout(s.workout_key)?.name ?? s.workout_key}</strong>
-            <div className="muted small">{new Date(s.started_at).toLocaleString()}</div>
+            <strong>
+              {getWorkout(s.workout_key)?.name ?? s.workout_key}
+              {s.skippies && <span title="Skippies Amendment Session"> ✨</span>}
+            </strong>
+            <div className="muted small">
+              {new Date(s.started_at).toLocaleString()}
+              {s.status === "PARTIAL" && " · partial"}
+            </div>
           </div>
           <span className="chip chip-good">{s.sets.length} sets</span>
         </div>
@@ -77,32 +134,22 @@ export function Home({ onStart, onResume }: Props) {
   );
 }
 
-function WorkoutCard({
-  workout,
-  isToday,
-  disabled,
-  onStart,
-}: {
-  workout: Workout;
-  isToday: boolean;
-  disabled: boolean;
-  onStart: () => void;
-}) {
+function SlotRow({ slot }: { slot: SlotInfo }) {
+  const { workout, state } = slot;
+  const chip = {
+    UPCOMING: <span className="chip">{workout.time}</span>,
+    ACTIVE: <span className="chip chip-good">open now</span>,
+    LOGGED: <span className="chip chip-good">✓ done</span>,
+    AMENDED: <span className="chip chip-amend">✨ amended</span>,
+    LAPSED: <span className="chip chip-lapsed">missed</span>,
+  }[state];
   return (
-    <div className="card">
-      <div className="row between">
-        <div className="row" style={{ gap: 8 }}>
-          <strong>{workout.day}</strong>
-          {isToday && <span className="chip chip-good">Today</span>}
-        </div>
-        <span className="chip chip-bias">{workout.bias}</span>
+    <div className={`card row between${state === "LOGGED" || state === "AMENDED" ? " exercise-done" : ""}`}>
+      <div>
+        <strong>{workout.day}</strong>
+        <div className="muted small">{workout.bias}</div>
       </div>
-      <div className="muted small" style={{ margin: "4px 0 12px" }}>
-        {workout.time} · {workout.exercises.length} exercises · {workout.exercises.length * 2} sets
-      </div>
-      <button className="btn-primary btn-block" disabled={disabled} onClick={onStart}>
-        {disabled ? "Finish current workout first" : "Start"}
-      </button>
+      {chip}
     </div>
   );
 }
