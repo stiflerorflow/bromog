@@ -204,7 +204,7 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
                       onChange={(v) => update(k, { reps: v })}
                     />
                     <button
-                      className={st.done ? "btn-primary" : ""}
+                      className={st.done ? "btn-go" : ""}
                       aria-label="log set"
                       onClick={() => toggleDone(ex, idx)}
                     >

@@ -126,7 +126,7 @@ export function Home({ onStart, onResume, onPetition, justFinished }: Props) {
           <div className="muted small" style={{ margin: "4px 0 12px" }}>
             {active.workout.exercises.length * 2} sets · {active.workout.bias}
           </div>
-          <button className="btn-primary btn-block" onClick={() => onStart(active.workout.key)}>
+          <button className="btn-go btn-block" onClick={() => onStart(active.workout.key)}>
             Enter session
           </button>
         </div>
