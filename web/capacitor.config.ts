@@ -7,8 +7,8 @@ const config: CapacitorConfig = {
   appName: "Bromog",
   webDir: "dist",
   android: {
-    // Allow http during local testing; production API is https on Container Apps.
-    allowMixedContent: true,
+    // Production API is https (Container Apps); don't permit mixed content in the APK.
+    allowMixedContent: false,
   },
 };
 

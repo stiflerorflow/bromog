@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { Home } from "./screens/Home";
 import { Workout } from "./screens/Workout";
-import { Stats } from "./screens/Stats";
 import { Coach } from "./screens/Coach";
+
+// Stats pulls in recharts (~the bulk of the bundle) — load it only when opened.
+const Stats = lazy(() => import("./screens/Stats").then((m) => ({ default: m.Stats })));
 import { Tribunal } from "./screens/Tribunal";
 import { Onboarding } from "./screens/Onboarding";
 import { Knowledge } from "./screens/Knowledge";
@@ -70,7 +72,11 @@ export function App() {
           onPetition={() => setView({ kind: "tribunal" })}
         />
       )}
-      {tab === "stats" && <Stats />}
+      {tab === "stats" && (
+        <Suspense fallback={<div className="scroll"><h1>Stats</h1><p className="muted">Loading…</p></div>}>
+          <Stats />
+        </Suspense>
+      )}
       {tab === "coach" && <Coach />}
       {tab === "knowledge" && <Knowledge />}
 

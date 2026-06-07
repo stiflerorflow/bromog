@@ -1,4 +1,4 @@
-import { apiConfigured, fetchSessions, putSession } from "./api";
+import { SyncError, apiConfigured, fetchSessions, putSession } from "./api";
 import type { LoggedSet, Session, UserId } from "./types";
 import { USERS, getWorkout } from "./program";
 import { GRACE_MIN, slotWindow } from "./schedule";
@@ -139,12 +139,16 @@ export async function flushQueue(): Promise<void> {
     for (const session of read<Session[]>(K.queue, [])) {
       try {
         await putSession(session);
-        const remaining = read<Session[]>(K.queue, []).filter((s) => s.id !== session.id);
-        write(K.queue, remaining);
-        notify();
-      } catch {
-        break; // offline / server down — try again later
+      } catch (e) {
+        // A 4xx the server will never accept is a poison item — drop it so it
+        // can't head-of-line-block the rest of the queue forever. Everything else
+        // (auth, rate-limit, 5xx, offline) is transient: stop and retry later.
+        const status = e instanceof SyncError ? e.status : 0;
+        if (![400, 413, 422].includes(status)) break;
       }
+      const remaining = read<Session[]>(K.queue, []).filter((s) => s.id !== session.id);
+      write(K.queue, remaining);
+      notify();
     }
   } finally {
     flushing = false;

@@ -74,6 +74,15 @@ def test_requires_token(client):
     assert client.get("/api/sessions").status_code == 401
 
 
+def test_auth_fails_closed_in_prod_when_token_unset(client, monkeypatch):
+    from server.config import Config
+
+    monkeypatch.setattr(Config, "APP_TOKEN", "")
+    client.application.testing = False  # simulate production (not debug/testing)
+    assert client.get("/api/users").status_code == 503
+    client.application.testing = True
+
+
 def test_upsert_is_idempotent(client):
     sid = str(uuid.uuid4())
     first = client.put(f"/api/sessions/{sid}", json=_session_payload(), headers=_auth())
@@ -145,6 +154,8 @@ def test_legacy_db_gets_missing_columns(tmp_path):
         row = resp.get_json()[0]
         assert row["id"] == "old1"
         assert row["week_id"] is None  # column now exists, value null
+        assert row["status"] == "LOGGED"  # backfilled
+        assert row["skippies"] is False  # backfilled
 
 
 def test_upsert_validates_payload(client):

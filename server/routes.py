@@ -26,11 +26,17 @@ def _session_factory():
 def require_token(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        if Config.APP_TOKEN:
-            header = request.headers.get("Authorization", "")
-            token = header[7:] if header.startswith("Bearer ") else ""
-            if not hmac.compare_digest(token, Config.APP_TOKEN):
-                return jsonify({"error": "unauthorized"}), 401
+        if not Config.APP_TOKEN:
+            # Fail CLOSED in production: an unset token must not silently open the
+            # API to the internet (the URL is public, CORS is wildcard). Only
+            # local dev / tests run without a token.
+            if current_app.debug or current_app.testing:
+                return fn(*args, **kwargs)
+            return jsonify({"error": "server auth not configured"}), 503
+        header = request.headers.get("Authorization", "")
+        token = header[7:] if header.startswith("Bearer ") else ""
+        if not hmac.compare_digest(token, Config.APP_TOKEN):
+            return jsonify({"error": "unauthorized"}), 401
         return fn(*args, **kwargs)
 
     return wrapper

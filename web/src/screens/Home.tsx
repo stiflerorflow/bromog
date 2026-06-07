@@ -15,6 +15,7 @@ import {
   clockLabel,
   lapsedAmendable,
   nextUpcoming,
+  weekId,
   weekSlots,
   type SlotInfo,
 } from "../data/schedule";
@@ -46,7 +47,12 @@ export function Home({ onStart, onResume, onPetition, justFinished }: Props) {
     reconcileDrafts(now);
   }, [now]);
 
-  const slots = weekSlots(sessions, now, draft?.workout_key ?? null);
+  // Only treat a draft as "in progress for a slot" if it belongs to the current
+  // ISO week — a stale draft from last week shouldn't light a slot up as ACTIVE
+  // (it gets auto-closed by reconcileDrafts, but guard the render path too).
+  const draftKey =
+    draft && weekId(now) === weekId(new Date(draft.started_at)) ? draft.workout_key : null;
+  const slots = weekSlots(sessions, now, draftKey);
   const active = activeSlot(slots);
   const lapsed = lapsedAmendable(slots);
   const next = nextUpcoming(slots);

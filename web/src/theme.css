@@ -481,7 +481,7 @@ button:disabled {
 }
 .petition {
   margin-top: 14px;
-  padding: 4px 0;
+  padding: 11px 0;
   font-style: italic;
   text-decoration: underline;
   color: var(--muted);

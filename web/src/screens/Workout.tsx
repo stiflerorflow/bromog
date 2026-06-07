@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getWorkout, SETS_PER_EXERCISE } from "../data/program";
 import { suggest } from "../data/overload";
 import type { Draft } from "../data/store";
@@ -14,7 +14,7 @@ interface Props {
   /** Performed out of window under the Tribunal — branded a Skippies Amendment Session. */
   amendment?: boolean;
   onExit: () => void;
-  onFinish: (session: Session) => void;
+  onFinish: () => void;
 }
 
 interface SetState {
@@ -52,6 +52,14 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
     seed(workout.exercises, suggestions, meta.draft)
   );
 
+  // Persist as a side effect of state changes (never from inside a setState
+  // updater — that double-writes under StrictMode and mutates the store mid-render).
+  // `dirty` skips the initial seed so entering a workout doesn't create an empty draft.
+  const dirty = useRef(false);
+  useEffect(() => {
+    if (dirty.current) persist(sets);
+  }, [sets]);
+
   function persist(next: Record<string, SetState>) {
     const draft: Draft = {
       id: meta.id,
@@ -77,28 +85,22 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
   }
 
   function update(k: string, patch: Partial<SetState>) {
-    setSets((prev) => {
-      const next = { ...prev, [k]: { ...prev[k], ...patch } };
-      persist(next); // persist prep edits too, not just done sets
-      return next;
-    });
+    dirty.current = true;
+    setSets((prev) => ({ ...prev, [k]: { ...prev[k], ...patch } }));
   }
 
   function toggleDone(ex: Exercise, idx: number) {
     const k = setKey(ex.key, idx);
     const willBeDone = !sets[k].done;
-    setSets((prev) => {
-      const next = {
-        ...prev,
-        [k]: {
-          ...prev[k],
-          done: willBeDone,
-          doneAt: willBeDone ? new Date().toISOString() : undefined,
-        },
-      };
-      persist(next);
-      return next;
-    });
+    dirty.current = true;
+    setSets((prev) => ({
+      ...prev,
+      [k]: {
+        ...prev[k],
+        done: willBeDone,
+        doneAt: willBeDone ? new Date().toISOString() : undefined,
+      },
+    }));
     if (willBeDone) timer.start(ex.restSeconds);
   }
 
@@ -142,7 +144,7 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
       sets: loggedSets,
     };
     commitSession(session);
-    onFinish(session);
+    onFinish();
   }
 
   return (

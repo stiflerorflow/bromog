@@ -14,6 +14,12 @@ function headers(): Record<string, string> {
   return h;
 }
 
+export class SyncError extends Error {
+  constructor(public status: number) {
+    super(`sync failed (${status})`);
+  }
+}
+
 export async function putSession(session: Session): Promise<void> {
   if (!apiConfigured) throw new Error("API not configured");
   const res = await fetch(`${BASE}/api/sessions/${session.id}`, {
@@ -21,7 +27,7 @@ export async function putSession(session: Session): Promise<void> {
     headers: headers(),
     body: JSON.stringify(session),
   });
-  if (!res.ok) throw new Error(`sync failed (${res.status})`);
+  if (!res.ok) throw new SyncError(res.status);
 }
 
 export async function fetchSessions(userId: UserId): Promise<Session[]> {

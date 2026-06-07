@@ -161,6 +161,11 @@ def _ensure_session_columns(engine) -> None:
     with engine.begin() as conn:
         for name, sqltype in missing.items():
             conn.execute(text(f"ALTER TABLE sessions ADD COLUMN {name} {sqltype}"))
+        # ORM defaults are insert-time only, so backfill legacy rows explicitly.
+        if "status" in missing:
+            conn.execute(text("UPDATE sessions SET status = 'LOGGED' WHERE status IS NULL"))
+        if "skippies" in missing:
+            conn.execute(text("UPDATE sessions SET skippies = FALSE WHERE skippies IS NULL"))
 
 
 def init_db(engine) -> sessionmaker:
