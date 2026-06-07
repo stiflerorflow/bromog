@@ -58,11 +58,11 @@ const E = {
   },
   rear_delt_fly: {
     key: "rear_delt_fly", name: "Rear Delt Fly", muscle: "Rear Delts",
-    equipment: "machine", restSeconds: 90, increment: 2.5, repTarget: [12, 20],
+    equipment: "machine", restSeconds: 90, increment: 2.5, repTarget: [12, 20], startWeight: 30,
   },
   cable_crunch: {
     key: "cable_crunch", name: "Cable Crunch", muscle: "Abs",
-    equipment: "cable", restSeconds: 90, increment: 2.5, repTarget: [12, 20],
+    equipment: "cable", restSeconds: 90, increment: 2.5, repTarget: [12, 20], startWeight: 40,
   },
   roman_chair_leg_lift: {
     key: "roman_chair_leg_lift", name: "Roman Chair Leg Lift", muscle: "Abs",
