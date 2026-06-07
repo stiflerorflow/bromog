@@ -14,7 +14,7 @@ const capWeekday = (jsDay: number): number => jsDay + 1;
 // Knowledge-base headline so the framing stays on-message.
 const REST_HOUR = 11;
 // Same strong opener + vegan Omega-3 (🌊) / B12 / D3 reminder, with a per-day nugget.
-const SUPPS = "Take your Omega-3 🌊 and have some B12 💊 & D3 ☀️ if you haven't recently.";
+const SUPPS = "Take your Omega-3 🌊, and top up B12 💊 & D3 ☀️ if you haven't recently.";
 const OPENER = "Rest up and grab some steps for active recovery 🚶.";
 const REST_NOTES = [
   {
