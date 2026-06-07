@@ -251,15 +251,21 @@ export function migrateLegacyData(): void {
   //    week and would show it as upcoming/lapsed.
   for (const u of USERS) {
     const sessions = getSessions(u.id);
-    const migrated = sessions.map(normalizeSession);
-    if (migrated.some((s, i) => s !== sessions[i])) saveSessions(u.id, migrated);
+    // Normalise, and drop any invalid 0-set session (a finished session always has
+    // at least one set; 0-set rows are junk, e.g. old test data).
+    const cleaned = sessions.map(normalizeSession).filter((s) => s.sets.length > 0);
+    if (cleaned.length !== sessions.length || cleaned.some((s, i) => s !== sessions[i])) {
+      saveSessions(u.id, cleaned);
+    }
   }
 
   // 3. Normalise anything still sitting in the offline sync queue, so a legacy
   //    queued item doesn't reach the server (or get restored) without metadata.
   const queue = read<Session[]>(K.queue, []);
-  const normQueue = queue.map(normalizeSession);
-  if (normQueue.some((s, i) => s !== queue[i])) write(K.queue, normQueue);
+  const normQueue = queue.map(normalizeSession).filter((s) => s.sets.length > 0);
+  if (normQueue.length !== queue.length || normQueue.some((s, i) => s !== queue[i])) {
+    write(K.queue, normQueue);
+  }
 }
 
 /** Call once on app start: migrate, close stale drafts, push pending, pull history. */
