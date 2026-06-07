@@ -13,24 +13,21 @@ const capWeekday = (jsDay: number): number => jsDay + 1;
 // Rest days (Tue / Fri / Sun): rest + active-recovery steps, each anchored to a
 // Knowledge-base headline so the framing stays on-message.
 const REST_HOUR = 11;
+// Same strong opener + vegan Omega-3 (🌊) / B12 / D3 reminder, with a per-day nugget.
+const SUPPS = "Take your Omega-3 🌊 and have some B12 💊 & D3 ☀️ if you haven't recently.";
+const OPENER = "Rest up and grab some steps for active recovery 🚶.";
 const REST_NOTES = [
   {
     jsDay: 2, // Tuesday
-    body:
-      "Rest up and get some steps in for active recovery. Yesterday's work is still " +
-      "paying off — a trained muscle stays primed to grow for 24–72 hours.",
+    body: `${OPENER} ${SUPPS} Yesterday's work is still building — a trained muscle stays primed to grow for 24–72h. 💪`,
   },
   {
     jsDay: 5, // Friday
-    body:
-      "Recovery day — a decent walk counts. Progress is slow by design; freshness is " +
-      "what keeps every hard set high-quality.",
+    body: `${OPENER} ${SUPPS} Progress is slow by design — freshness is what keeps every hard set high-quality. 🌱`,
   },
   {
     jsDay: 0, // Sunday
-    body:
-      "Proper rest today, plus an easy walk if you fancy it. Three rest days that are " +
-      "actually rest are part of the plan — the schedule drives everything so you don't have to.",
+    body: `${OPENER} ${SUPPS} Three rest days that are actually rest are part of the plan — the schedule drives everything so you don't have to. ✨`,
   },
 ];
 
@@ -60,7 +57,7 @@ export async function scheduleWindowNotifications(): Promise<void> {
 
     const restNotes = REST_NOTES.map((r, i) => ({
       id: 2000 + i,
-      title: "Rest day",
+      title: "🛌 Rest day",
       body: r.body,
       schedule: {
         on: { weekday: capWeekday(r.jsDay), hour: REST_HOUR, minute: 0 },
