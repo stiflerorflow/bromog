@@ -21,11 +21,11 @@ const E = {
   },
   lat_pulldown: {
     key: "lat_pulldown", name: "Lat Pulldown", muscle: "Back",
-    equipment: "cable", restSeconds: 120, increment: 2.5, repTarget: [8, 12],
+    equipment: "cable", restSeconds: 120, increment: 2.5, repTarget: [8, 12], startWeight: 60,
   },
   machine_shoulder_press: {
     key: "machine_shoulder_press", name: "Machine Shoulder Press", muscle: "Delts",
-    equipment: "machine", restSeconds: 120, increment: 2.5, repTarget: [8, 12],
+    equipment: "machine", restSeconds: 120, increment: 2.5, repTarget: [8, 12], startWeight: 30,
   },
   bulgarian_split_squat: {
     key: "bulgarian_split_squat", name: "Bulgarian Split Squat", muscle: "Quads/Glutes",
