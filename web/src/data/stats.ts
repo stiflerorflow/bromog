@@ -52,6 +52,46 @@ export function personalRecords(sessions: Session[]): Record<string, ExercisePR>
   return out;
 }
 
+export interface RecentPR {
+  exerciseKey: string;
+  weightKg: number;
+  reps: number;
+  e1rm: number;
+}
+
+/**
+ * PRs set in the most recent finished session — an exercise whose best estimated-1RM
+ * that day beat every prior session's best for it. (First-ever instances don't count,
+ * so a debut session doesn't spam "PR" on everything.)
+ */
+export function recentPRs(sessions: Session[]): RecentPR[] {
+  const finished = [...sessions]
+    .filter((s) => s.finished_at)
+    .sort((a, b) => (a.started_at < b.started_at ? 1 : -1));
+  if (!finished.length) return [];
+  const latest = finished[0];
+  const prior = finished.slice(1);
+
+  const byExercise: Record<string, LoggedSet[]> = {};
+  for (const set of latest.sets) (byExercise[set.exercise_key] ??= []).push(set);
+
+  const out: RecentPR[] = [];
+  for (const [exerciseKey, sets] of Object.entries(byExercise)) {
+    const best = sets.reduce((a, b) => (e1rm(b.weight_kg, b.reps) > e1rm(a.weight_kg, a.reps) ? b : a));
+    const bestE = e1rm(best.weight_kg, best.reps);
+    const priorBest = Math.max(
+      0,
+      ...prior.flatMap((s) =>
+        s.sets.filter((x) => x.exercise_key === exerciseKey).map((x) => e1rm(x.weight_kg, x.reps))
+      )
+    );
+    if (priorBest > 0 && bestE > priorBest) {
+      out.push({ exerciseKey, weightKg: best.weight_kg, reps: best.reps, e1rm: Math.round(bestE * 10) / 10 });
+    }
+  }
+  return out;
+}
+
 export interface SeriesPoint {
   date: string;
   topWeight: number;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { e1rm, exerciseSeries, personalRecords, weeklyVolume } from "./stats";
+import { e1rm, exerciseSeries, personalRecords, recentPRs, weeklyVolume } from "./stats";
 import type { Session } from "./types";
 
 function session(id: string, date: string, weight: number, reps: number): Session {
@@ -41,6 +41,16 @@ describe("stats", () => {
       session("a", "2026-05-01", 60, 10),
     ]);
     expect(series.map((p) => p.topWeight)).toEqual([60, 80]);
+  });
+
+  it("flags a PR only when the latest session beats a prior one", () => {
+    const older = session("a", "2026-05-01", 60, 10); // rdl e1RM 80
+    const newer = session("b", "2026-06-01", 80, 5); // rdl e1RM ~93 — a PR
+    expect(recentPRs([newer, older]).map((p) => p.exerciseKey)).toEqual(["rdl"]);
+    // no improvement -> no PR
+    expect(recentPRs([session("c", "2026-06-08", 60, 10), older])).toEqual([]);
+    // debut session alone -> no PR spam
+    expect(recentPRs([older])).toEqual([]);
   });
 
   it("counts weekly working-set volume", () => {
