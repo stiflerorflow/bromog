@@ -74,7 +74,21 @@ export async function scheduleWindowNotifications(): Promise<void> {
       },
     ];
 
-    await LocalNotifications.schedule({ notifications: [...workoutNotes, ...restNotes, ...chores] });
+    // One-shot "hello" ~8s after launch, so a fresh install can confirm that
+    // notifications actually arrive on this device (the weekly ones can only
+    // prove themselves at their real times). Fires once, not recurring.
+    const hello = [
+      {
+        id: 9000,
+        title: "🔔 Bromog is armed",
+        body: "Notifications are working. Session, rest-day and bins reminders are now scheduled. 💪",
+        schedule: { at: new Date(Date.now() + 8000), allowWhileIdle: true },
+      },
+    ];
+
+    await LocalNotifications.schedule({
+      notifications: [...workoutNotes, ...restNotes, ...chores, ...hello],
+    });
   } catch {
     // Notifications are best-effort; never block app start.
   }
