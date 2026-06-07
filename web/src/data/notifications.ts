@@ -68,7 +68,16 @@ export async function scheduleWindowNotifications(): Promise<void> {
       },
     }));
 
-    await LocalNotifications.schedule({ notifications: [...workoutNotes, ...restNotes] });
+    const chores = [
+      {
+        id: 3000,
+        title: "🗑️ Bins",
+        body: "Put the bins out.",
+        schedule: { on: { weekday: capWeekday(1), hour: 20, minute: 0 }, allowWhileIdle: true },
+      },
+    ];
+
+    await LocalNotifications.schedule({ notifications: [...workoutNotes, ...restNotes, ...chores] });
   } catch {
     // Notifications are best-effort; never block app start.
   }
