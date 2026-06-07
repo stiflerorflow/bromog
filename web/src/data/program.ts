@@ -45,7 +45,8 @@ const E = {
   },
   db_lateral_raise: {
     key: "db_lateral_raise", name: "Dumbbell Lateral Raise", muscle: "Side Delts",
-    equipment: "dumbbell", restSeconds: 90, increment: 1, repTarget: [12, 20], startWeight: 7.5,
+    // 0.5kg steps — laterals use small jumps, and 7.5 + 1kg steps couldn't land on 10.
+    equipment: "dumbbell", restSeconds: 90, increment: 0.5, repTarget: [12, 20], startWeight: 7.5,
   },
   preacher_curl: {
     key: "preacher_curl", name: "Preacher Curl", muscle: "Biceps",

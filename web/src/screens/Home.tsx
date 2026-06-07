@@ -20,7 +20,7 @@ import {
 } from "../data/schedule";
 import { useStore } from "../components/useStore";
 import { useNow } from "../components/useNow";
-import { NextWorkoutCard, TheWeekSheet } from "../components/NextWorkoutCard";
+import { NextWorkoutCard, TheWeekSheet, WeekReviewCard } from "../components/NextWorkoutCard";
 import { cardForSlot } from "../data/cards";
 
 interface Props {
@@ -146,14 +146,14 @@ export function Home({ onStart, onResume, onPetition, justFinished }: Props) {
           )}
         </>
       ) : (
-        <div className="card">
-          <div className="muted">All sessions of this week stand complete. ⚖️</div>
+        <>
+          <WeekReviewCard slots={slots} justFinished={justFinished} onInfo={() => setShowWeek(true)} />
           {lapsed && (
-            <button className="btn-ghost petition" onClick={onPetition} style={{ marginTop: 8 }}>
+            <button className="btn-ghost petition" onClick={onPetition}>
               petition the Tribunal…
             </button>
           )}
-        </div>
+        </>
       )}
 
       <h2>This week</h2>

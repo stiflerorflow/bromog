@@ -620,6 +620,63 @@ button:disabled {
   margin: 14px 0 0;
 }
 
+/* Week in Review card */
+.wk-stats {
+  display: flex;
+  gap: 24px;
+  margin: 14px 0 4px;
+}
+.wk-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.wk-num {
+  font-size: 30px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--lime);
+}
+.wk-lbl {
+  font-size: 13px;
+  color: var(--muted);
+}
+.wk-slots {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.wk-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0;
+  background: var(--surface-2);
+  border-radius: 12px;
+}
+.wk-slot-day {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.wk-slot-mark {
+  font-size: 18px;
+  line-height: 1;
+}
+.wk-slot-mark.wk-done {
+  color: var(--good);
+}
+.wk-slot-mark.wk-amend {
+  color: #ff9ee0;
+}
+.wk-slot-mark.wk-miss {
+  color: var(--danger);
+}
+
 /* The Week info sheet */
 .week-sheet h1 {
   font-size: 24px;
