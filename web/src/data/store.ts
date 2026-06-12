@@ -51,7 +51,13 @@ function read<T>(key: string, fallback: T): T {
 }
 function write(key: string, value: unknown) {
   const raw = JSON.stringify(value);
-  localStorage.setItem(key, raw);
+  try {
+    localStorage.setItem(key, raw);
+  } catch {
+    // Quota exceeded or private mode — keep in-memory cache but don't crash mid-commit.
+    _readCache.set(key, { raw, value });
+    return;
+  }
   // Keep the cache in sync so the next read returns this exact reference.
   _readCache.set(key, { raw, value });
 }
@@ -130,8 +136,14 @@ export function pendingSyncCount(): number {
 }
 
 let flushing = false;
+let flushAgain = false;
+
 export async function flushQueue(): Promise<void> {
-  if (flushing || !apiConfigured) return;
+  if (flushing) {
+    flushAgain = true;
+    return;
+  }
+  if (!apiConfigured) return;
   flushing = true;
   try {
     // Snapshot decides WHAT to send; the persisted queue is always re-read fresh
@@ -152,6 +164,10 @@ export async function flushQueue(): Promise<void> {
     }
   } finally {
     flushing = false;
+    if (flushAgain) {
+      flushAgain = false;
+      void flushQueue();
+    }
   }
 }
 
@@ -208,7 +224,10 @@ function reconcileUserDraft(userId: UserId, now: Date): void {
   const draft = getDraft(userId);
   if (!draft) return;
   const workout = getWorkout(draft.workout_key);
-  if (!workout) return;
+  if (!workout) {
+    clearDraft(userId);
+    return;
+  }
   const end = slotWindow(workout, new Date(draft.started_at)).end;
   if (now.getTime() <= end.getTime() + GRACE_MIN * 60_000) return;
 
@@ -278,4 +297,28 @@ export function bootSync() {
   reconcileDrafts();
   void flushQueue();
   void syncDown();
+}
+
+/** Wire browser events that should re-trigger sync/reconcile. Call once at startup. */
+export function initSyncListeners(onReconcile: () => void): () => void {
+  const onOnline = () => void flushQueue();
+  const onStorage = (e: StorageEvent) => {
+    if (!e.key || !e.key.startsWith("bromog.")) return;
+    _readCache.delete(e.key);
+    notify();
+  };
+  const onVisible = () => {
+    if (document.visibilityState === "visible") {
+      onReconcile();
+      void flushQueue();
+    }
+  };
+  window.addEventListener("online", onOnline);
+  window.addEventListener("storage", onStorage);
+  document.addEventListener("visibilitychange", onVisible);
+  return () => {
+    window.removeEventListener("online", onOnline);
+    window.removeEventListener("storage", onStorage);
+    document.removeEventListener("visibilitychange", onVisible);
+  };
 }

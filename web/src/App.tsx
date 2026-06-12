@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Home } from "./screens/Home";
 import { Workout } from "./screens/Workout";
 import { Coach } from "./screens/Coach";
@@ -8,8 +8,10 @@ const Stats = lazy(() => import("./screens/Stats").then((m) => ({ default: m.Sta
 import { Tribunal } from "./screens/Tribunal";
 import { Onboarding } from "./screens/Onboarding";
 import { Knowledge } from "./screens/Knowledge";
-import { getChosenUser, getDraft } from "./data/store";
+import { getChosenUser, getDraft, reconcileDrafts } from "./data/store";
+import { weekId } from "./data/schedule";
 import { useStore } from "./components/useStore";
+import { useNow } from "./components/useNow";
 
 type Tab = "home" | "stats" | "coach" | "knowledge";
 type View =
@@ -21,6 +23,12 @@ export function App() {
   const [view, setView] = useState<View>({ kind: "tab", tab: "home" });
   const [finished, setFinished] = useState<null | "normal" | "amendment">(null);
   const chosenUser = useStore(getChosenUser);
+  const now = useNow();
+
+  // Close stale drafts on every tab, not only while Home is mounted.
+  useEffect(() => {
+    reconcileDrafts(now);
+  }, [now]);
 
   // First launch: pick the user once. Sticky thereafter.
   if (!chosenUser) {
@@ -67,7 +75,12 @@ export function App() {
           onStart={(workoutKey) => setView({ kind: "workout", workoutKey })}
           onResume={() => {
             const draft = getDraft();
-            if (draft) setView({ kind: "workout", workoutKey: draft.workout_key });
+            if (
+              draft &&
+              weekId(new Date()) === weekId(new Date(draft.started_at))
+            ) {
+              setView({ kind: "workout", workoutKey: draft.workout_key });
+            }
           }}
           onPetition={() => setView({ kind: "tribunal" })}
         />

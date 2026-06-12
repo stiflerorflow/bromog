@@ -5,6 +5,7 @@ import type { Draft } from "../data/store";
 import { commitSession, currentUser, getDraft, getSessions, saveDraft } from "../data/store";
 import { uuid } from "../data/uuid";
 import { isoWeek } from "../data/stats";
+import { GRACE_MIN, slotWindow } from "../data/schedule";
 import { RestBar, useRestTimer } from "../components/RestTimer";
 import { Stepper } from "../components/Stepper";
 import type { Exercise, LoggedSet, Session, UserId } from "../data/types";
@@ -130,6 +131,9 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
           done_at: st.doneAt ?? new Date().toISOString(),
         }))
     );
+    const finishedAt = new Date().toISOString();
+    const end = slotWindow(workout, new Date(meta.startedAt)).end;
+    const pastGrace = Date.now() > end.getTime() + GRACE_MIN * 60_000;
     const session: Session = {
       id: meta.id,
       user_id: user,
@@ -137,8 +141,8 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
       week_id: isoWeek(new Date(meta.startedAt)),
       slot_id: workout.slotId,
       started_at: meta.startedAt,
-      finished_at: new Date().toISOString(),
-      status: "LOGGED",
+      finished_at: finishedAt,
+      status: isAmendment || !pastGrace ? "LOGGED" : "PARTIAL",
       skippies: isAmendment,
       skippies_confessed_at: isAmendment ? meta.startedAt : null,
       sets: loggedSets,

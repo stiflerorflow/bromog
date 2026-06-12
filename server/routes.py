@@ -11,6 +11,8 @@ import hmac
 from functools import wraps
 
 from flask import Blueprint, current_app, jsonify, request
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
 
 from . import coach
 from .config import Config
@@ -42,8 +44,23 @@ def require_token(fn):
     return wrapper
 
 
+def _parse_bool(value, *, default=False):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    raise ValueError("expected boolean")
+
+
 @api.get("/health")
 def health():
+    Session = _session_factory()
+    try:
+        with Session() as s:
+            s.execute(text("SELECT 1"))
+    except Exception:
+        current_app.logger.exception("health check database probe failed")
+        return jsonify({"status": "degraded", "database": "unavailable"}), 503
     return jsonify({"status": "ok"})
 
 
@@ -70,6 +87,15 @@ def upsert_session(session_id: str):
     started_at = data.get("started_at")
     if not user_id or not workout_key or not started_at:
         return jsonify({"error": "user_id, workout_key and started_at are required"}), 400
+
+    status = data.get("status", "LOGGED")
+    if status not in ("LOGGED", "PARTIAL"):
+        return jsonify({"error": "status must be 'LOGGED' or 'PARTIAL'"}), 400
+
+    try:
+        skippies = _parse_bool(data.get("skippies"), default=False)
+    except ValueError:
+        return jsonify({"error": "skippies must be a boolean"}), 400
 
     # Validate the sets payload up front so a malformed body is a clean 400, not a 500.
     raw_sets = data.get("sets", [])
@@ -110,16 +136,16 @@ def upsert_session(session_id: str):
         if ws is None:
             ws = WorkoutSession(id=session_id, user_id=user_id, workout_key=workout_key)
             s.add(ws)
+        elif ws.user_id != user_id:
+            return jsonify({"error": "session belongs to another user"}), 403
         else:
-            ws.user_id = user_id
             ws.workout_key = workout_key
         ws.week_id = data.get("week_id")
         ws.slot_id = data.get("slot_id")
         ws.started_at = started_at
         ws.finished_at = data.get("finished_at")
-        status = data.get("status") or "LOGGED"
-        ws.status = status if status in ("LOGGED", "PARTIAL") else "LOGGED"
-        ws.skippies = bool(data.get("skippies", False))
+        ws.status = status
+        ws.skippies = skippies
         ws.skippies_confessed_at = data.get("skippies_confessed_at")
 
         # Replace sets wholesale (immutable record; replay = same content).
@@ -127,7 +153,26 @@ def upsert_session(session_id: str):
         s.flush()
         for entry in parsed_sets:
             ws.sets.append(SetEntry(**entry))
-        s.commit()
+        try:
+            s.commit()
+        except IntegrityError:
+            s.rollback()
+            ws = s.get(WorkoutSession, session_id)
+            if ws is None or ws.user_id != user_id:
+                return jsonify({"error": "session conflict"}), 409
+            ws.workout_key = workout_key
+            ws.week_id = data.get("week_id")
+            ws.slot_id = data.get("slot_id")
+            ws.started_at = started_at
+            ws.finished_at = data.get("finished_at")
+            ws.status = status
+            ws.skippies = skippies
+            ws.skippies_confessed_at = data.get("skippies_confessed_at")
+            ws.sets.clear()
+            s.flush()
+            for entry in parsed_sets:
+                ws.sets.append(SetEntry(**entry))
+            s.commit()
         return jsonify(ws.to_dict()), 200
 
 
@@ -136,12 +181,18 @@ def upsert_session(session_id: str):
 def list_sessions():
     """Full history for a user — used to restore local state after a reinstall."""
     user_id = request.args.get("user")
+    if not user_id:
+        return jsonify({"error": "user query parameter is required"}), 400
     Session = _session_factory()
     with Session() as s:
-        q = s.query(WorkoutSession)
-        if user_id:
-            q = q.filter(WorkoutSession.user_id == user_id)
-        sessions = q.order_by(WorkoutSession.started_at.desc()).all()
+        if s.get(User, user_id) is None:
+            return jsonify({"error": f"unknown user {user_id}"}), 400
+        sessions = (
+            s.query(WorkoutSession)
+            .filter(WorkoutSession.user_id == user_id)
+            .order_by(WorkoutSession.started_at.desc())
+            .all()
+        )
         return jsonify([ws.to_dict() for ws in sessions])
 
 
