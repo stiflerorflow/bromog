@@ -33,6 +33,8 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
   const user = currentUser();
   const timer = useRestTimer();
   const [hideDone, setHideDone] = useState(false);
+  const [celebrateEx, setCelebrateEx] = useState<string | null>(null);
+  const [popSet, setPopSet] = useState<string | null>(null);
 
   // Suggestions are computed once from the user's history at workout start.
   const history = useMemo(() => getSessions(user), [user]);
@@ -93,6 +95,8 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
   function toggleDone(ex: Exercise, idx: number) {
     const k = setKey(ex.key, idx);
     const willBeDone = !sets[k].done;
+    const willCompleteExercise =
+      willBeDone && [1, 2].every((i) => i === idx || sets[setKey(ex.key, i)]?.done);
     dirty.current = true;
     setSets((prev) => ({
       ...prev,
@@ -102,7 +106,15 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
         doneAt: willBeDone ? new Date().toISOString() : undefined,
       },
     }));
-    if (willBeDone) timer.start(ex.restSeconds);
+    if (willBeDone) {
+      setPopSet(k);
+      window.setTimeout(() => setPopSet((cur) => (cur === k ? null : cur)), 420);
+      if (willCompleteExercise) {
+        setCelebrateEx(ex.key);
+        window.setTimeout(() => setCelebrateEx((cur) => (cur === ex.key ? null : cur)), 900);
+      }
+      timer.start(ex.restSeconds);
+    }
   }
 
   const exerciseDone = (ex: Exercise) =>
@@ -110,6 +122,17 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
 
   const completedCount = workout.exercises.filter(exerciseDone).length;
   const loggedSetCount = Object.values(sets).filter((s) => s.done).length;
+  const progressPct = Math.round((completedCount / workout.exercises.length) * 100);
+
+  function setSummary(ex: Exercise): string {
+    return [1, 2]
+      .map((i) => {
+        const st = sets[setKey(ex.key, i)];
+        const w = st.weight > 0 ? `${fmtWeight(st.weight)} kg` : "BW";
+        return `${w} × ${st.reps}`;
+      })
+      .join(" · ");
+  }
 
   // Incomplete exercises float to the top so logging flows in any order.
   const ordered = [...workout.exercises].sort(
@@ -170,24 +193,55 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
         )}
 
         <h1 style={{ marginTop: 4 }}>{workout.day}</h1>
-        <div className="muted small">
-          {completedCount}/{workout.exercises.length} exercises · {loggedSetCount} sets logged
+        <div className="workout-progress-wrap">
+          <div className="row between" style={{ marginBottom: 8 }}>
+            <span className="muted small">
+              {completedCount}/{workout.exercises.length} exercises
+            </span>
+            <span className="muted small">{loggedSetCount} sets logged</span>
+          </div>
+          <div className="workout-progress-track" aria-hidden>
+            <div className="workout-progress-fill" style={{ width: `${progressPct}%` }} />
+          </div>
         </div>
 
         {ordered.map((ex) => {
           const done = exerciseDone(ex);
           if (hideDone && done) return null;
           const sug = suggestions[ex.key];
+          const oneSetDone = sets[setKey(ex.key, 1)]?.done || sets[setKey(ex.key, 2)]?.done;
           return (
-            <div key={ex.key} className={`card${done ? " exercise-done" : ""}`}>
+            <div
+              key={ex.key}
+              className={[
+                "card",
+                "exercise-card",
+                done ? "exercise-done" : oneSetDone ? "exercise-partial" : "",
+                celebrateEx === ex.key ? "exercise-just-done" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
               <div className="row between">
                 <div className="row" style={{ gap: 8 }}>
-                  <strong>{ex.name}</strong>
-                  {ex.bias && <span className="chip chip-bias">bias</span>}
+                  {done ? (
+                    <span className="exercise-check" aria-hidden>
+                      ✓
+                    </span>
+                  ) : (
+                    <span className="exercise-pending" aria-hidden />
+                  )}
+                  <strong className={done ? "exercise-name-done" : ""}>{ex.name}</strong>
+                  {ex.bias && !done && <span className="chip chip-bias">bias</span>}
                 </div>
-                {done && <span className="chip chip-good">done</span>}
+                {done ? (
+                  <span className="chip chip-good exercise-done-chip">Complete</span>
+                ) : oneSetDone ? (
+                  <span className="chip chip-partial">1 of 2</span>
+                ) : null}
               </div>
               <div className="muted small">{ex.muscle}</div>
+              {done && <div className="exercise-summary">{setSummary(ex)}</div>}
 
               <div className="colhead" style={{ marginTop: 12 }}>
                 <span>Set</span>
@@ -199,7 +253,16 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
                 const k = setKey(ex.key, idx);
                 const st = sets[k];
                 return (
-                  <div key={idx} className={`setrow${st.done ? " done" : ""}`}>
+                  <div
+                    key={idx}
+                    className={[
+                      "setrow",
+                      st.done ? "done" : "",
+                      popSet === k ? "set-just-logged" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
                     <span className="label">{idx}</span>
                     <Stepper
                       value={st.weight}
@@ -215,11 +278,11 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
                       onChange={(v) => update(k, { reps: v })}
                     />
                     <button
-                      className={st.done ? "btn-go" : ""}
-                      aria-label="log set"
+                      className={`set-check${st.done ? " set-check-done" : ""}`}
+                      aria-label={st.done ? "Unlog set" : "Log set"}
                       onClick={() => toggleDone(ex, idx)}
                     >
-                      {st.done ? "✓" : "○"}
+                      {st.done ? "✓" : ""}
                     </button>
                   </div>
                 );
@@ -277,4 +340,8 @@ function seed(
     }
   }
   return out;
+}
+
+function fmtWeight(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
