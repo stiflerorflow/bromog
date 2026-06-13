@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { USERS, getWorkout } from "../data/program";
 import {
   currentUser,
   getDraft,
   getSessions,
   pendingSyncCount,
-  reconcileDrafts,
   setUser,
 } from "../data/store";
 import type { UserId } from "../data/types";
@@ -42,16 +41,12 @@ export function Home({ onStart, onResume, onPetition, justFinished }: Props) {
   const [showWeek, setShowWeek] = useState(false);
   const userName = USERS.find((u) => u.id === user)?.name ?? user;
 
-  // Auto-close drafts whose grace period has elapsed (runs on each minute tick).
-  useEffect(() => {
-    reconcileDrafts(now);
-  }, [now]);
-
   // Only treat a draft as "in progress for a slot" if it belongs to the current
   // ISO week — a stale draft from last week shouldn't light a slot up as ACTIVE
   // (it gets auto-closed by reconcileDrafts, but guard the render path too).
-  const draftKey =
-    draft && weekId(now) === weekId(new Date(draft.started_at)) ? draft.workout_key : null;
+  const draftInWeek =
+    draft && weekId(now) === weekId(new Date(draft.started_at)) ? draft : null;
+  const draftKey = draftInWeek?.workout_key ?? null;
   const slots = weekSlots(sessions, now, draftKey);
   const active = activeSlot(slots);
   const lapsed = lapsedAmendable(slots);
@@ -114,11 +109,11 @@ export function Home({ onStart, onResume, onPetition, justFinished }: Props) {
         <p className="muted small">{pending} session{pending > 1 ? "s" : ""} waiting to sync…</p>
       )}
 
-      {draft ? (
+      {draftInWeek ? (
         <div className="banner row between">
           <div>
             <strong>Workout in progress</strong>
-            <div className="muted small">{getWorkout(draft.workout_key)?.name}</div>
+            <div className="muted small">{getWorkout(draftInWeek.workout_key)?.name}</div>
           </div>
           <button className="btn-primary" onClick={onResume}>
             Resume
@@ -138,28 +133,20 @@ export function Home({ onStart, onResume, onPetition, justFinished }: Props) {
           </button>
         </div>
       ) : next && nextCard ? (
-        <>
-          <NextWorkoutCard
-            card={nextCard}
-            windowLabel={next.workout.time}
-            label={justFinished ? "Session logged ✓ · up next" : "Up next"}
-            onInfo={() => setShowWeek(true)}
-          />
-          {lapsed && (
-            <button className="btn-ghost petition" onClick={onPetition}>
-              petition the Tribunal…
-            </button>
-          )}
-        </>
+        <NextWorkoutCard
+          card={nextCard}
+          windowLabel={next.workout.time}
+          label={justFinished ? "Session logged ✓ · up next" : "Up next"}
+          onInfo={() => setShowWeek(true)}
+        />
       ) : (
-        <>
-          <WeekReviewCard slots={slots} justFinished={justFinished} onInfo={() => setShowWeek(true)} />
-          {lapsed && (
-            <button className="btn-ghost petition" onClick={onPetition}>
-              petition the Tribunal…
-            </button>
-          )}
-        </>
+        <WeekReviewCard slots={slots} justFinished={justFinished} onInfo={() => setShowWeek(true)} />
+      )}
+
+      {lapsed && (
+        <button className="btn-ghost petition" onClick={onPetition}>
+          petition the Tribunal…
+        </button>
       )}
 
       <h2>This week</h2>

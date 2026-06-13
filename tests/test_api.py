@@ -185,6 +185,43 @@ def test_upsert_rejects_unknown_user(client):
     assert resp.status_code == 400
 
 
+def test_list_sessions_requires_user(client):
+    client.put(f"/api/sessions/{uuid.uuid4()}", json=_session_payload(), headers=_auth())
+    assert client.get("/api/sessions", headers=_auth()).status_code == 400
+    assert client.get("/api/sessions?user=ghost", headers=_auth()).status_code == 400
+
+
+def test_upsert_rejects_cross_user_overwrite(client):
+    sid = str(uuid.uuid4())
+    assert client.put(f"/api/sessions/{sid}", json=_session_payload(), headers=_auth()).status_code == 200
+    resp = client.put(
+        f"/api/sessions/{sid}",
+        json=_session_payload(user_id="matt", workout_key="wednesday"),
+        headers=_auth(),
+    )
+    assert resp.status_code == 403
+
+
+def test_upsert_rejects_invalid_status(client):
+    sid = str(uuid.uuid4())
+    resp = client.put(
+        f"/api/sessions/{sid}",
+        json=_session_payload(status="DONE"),
+        headers=_auth(),
+    )
+    assert resp.status_code == 400
+
+
+def test_upsert_rejects_non_boolean_skippies(client):
+    sid = str(uuid.uuid4())
+    resp = client.put(
+        f"/api/sessions/{sid}",
+        json=_session_payload(skippies="false"),
+        headers=_auth(),
+    )
+    assert resp.status_code == 400
+
+
 def test_history_is_scoped_by_user(client):
     client.put(f"/api/sessions/{uuid.uuid4()}", json=_session_payload(), headers=_auth())
     client.put(
