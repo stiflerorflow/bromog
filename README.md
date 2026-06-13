@@ -184,7 +184,7 @@ link.)
 ## Time-bound sessions & the Skippies Tribunal
 
 Each workout is a **slot** with a hard validity window on its weekday
-([program.ts](web/src/data/program.ts)): Mon 17–21, Wed 07–14, Thu 17–21, Sat 11–16 (local
+([program.ts](web/src/data/program.ts)): Mon 17–21, Wed 07–14, Thu 17–21, Sat 09–21 (local
 wall-clock). In-window, Home opens the session for frictionless logging. Out of window, a
 **lapsed** slot can only be performed by passing the **Skippies Tribunal**
 ([Tribunal.tsx](web/src/screens/Tribunal.tsx)) — a ≥3-tap mock-court flow that brands the
