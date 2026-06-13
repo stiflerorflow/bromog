@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 interface TimerState {
   secondsLeft: number;
+  total: number;
   active: boolean;
   start: (seconds: number) => void;
   add: (delta: number) => void;
@@ -15,6 +16,7 @@ interface TimerState {
  */
 export function useRestTimer(): TimerState {
   const [secondsLeft, setSecondsLeft] = useState(0);
+  const [total, setTotal] = useState(0);
   const [active, setActive] = useState(false);
   const endRef = useRef<number>(0);
   const firedRef = useRef(false);
@@ -42,13 +44,17 @@ export function useRestTimer(): TimerState {
     endRef.current = Date.now() + seconds * 1000;
     firedRef.current = false;
     setSecondsLeft(seconds);
+    setTotal(seconds);
     setActive(true);
   }, []);
 
   const add = useCallback((delta: number) => {
     endRef.current = Math.max(Date.now(), endRef.current + delta * 1000);
     firedRef.current = false;
-    setSecondsLeft(Math.max(0, Math.round((endRef.current - Date.now()) / 1000)));
+    const left = Math.max(0, Math.round((endRef.current - Date.now()) / 1000));
+    setSecondsLeft(left);
+    // Grow the track when extending past the original rest so the bar never overflows.
+    setTotal((t) => Math.max(t, left));
   }, []);
 
   const stop = useCallback(() => {
@@ -56,14 +62,20 @@ export function useRestTimer(): TimerState {
     setSecondsLeft(0);
   }, []);
 
-  return { secondsLeft, active, start, add, stop };
+  return { secondsLeft, total, active, start, add, stop };
 }
 
 export function RestBar({ timer }: { timer: TimerState }) {
   if (!timer.active) return null;
   const zero = timer.secondsLeft <= 0;
+  const pct = timer.total > 0 ? Math.max(0, Math.min(100, (timer.secondsLeft / timer.total) * 100)) : 0;
   return (
     <div className={`rest${zero ? " zero" : ""}`}>
+      <div
+        className="rest-progress"
+        style={{ width: `${pct}%` }}
+        aria-hidden
+      />
       <div className="time">{format(timer.secondsLeft)}</div>
       <div className="grow muted small">{zero ? "Rest done — next set" : "Resting"}</div>
       <button onClick={() => timer.add(-15)}>−15</button>

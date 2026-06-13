@@ -28,6 +28,15 @@ interface SetState {
 
 const setKey = (exKey: string, idx: number) => `${exKey}:${idx}`;
 
+/** Confirm a tap landed without the user needing to look — sweaty-thumb friendly. */
+function buzz(pattern: number | number[]) {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    /* vibration unsupported — silent no-op */
+  }
+}
+
 export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
   const workout = getWorkout(workoutKey)!;
   const user = currentUser();
@@ -112,6 +121,9 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
       if (willCompleteExercise) {
         setCelebrateEx(ex.key);
         window.setTimeout(() => setCelebrateEx((cur) => (cur === ex.key ? null : cur)), 900);
+        buzz([0, 25, 45, 30]); // double-tap: exercise done
+      } else {
+        buzz(18); // light tap: set logged
       }
       timer.start(ex.restSeconds);
     }
@@ -171,6 +183,7 @@ export function Workout({ workoutKey, amendment, onExit, onFinish }: Props) {
       sets: loggedSets,
     };
     commitSession(session);
+    buzz([0, 40, 60, 40, 60, 80]); // triumphant finish
     onFinish();
   }
 
