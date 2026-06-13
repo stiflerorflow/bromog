@@ -12,13 +12,21 @@
   --accent-soft: #221c3d;
   --lime: #c4f246; /* electric lime — active / go / PR pops */
   --lime-soft: #26310f;
+  --lime-edge: #4d5e1f; /* lime card border (open / done / PR) */
   --good: #c4f246; /* positive/done reads as lime energy */
   --good-soft: #26310f;
   --warn: #f0b53f;
   --danger: #ff6b6b;
+  --amend: #ff9ee0; /* skippies amendment pink */
+  --amend-soft: #3a1f33;
+  --text-dim: #cdd5e2; /* long-form body copy inside cards */
+  /* The "go train now" CTA gradient — lime, used on every primary set action. */
+  --grad-go: linear-gradient(180deg, #d4ff66, #b6e83a);
+  --on-go: #16230a; /* ink that sits on the lime CTA */
   --radius: 18px;
   --radius-sm: 12px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.22);
+  --hairline: inset 0 1px 0 rgba(255, 255, 255, 0.04); /* top-edge highlight for depth */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -95,12 +103,12 @@ h2 {
 }
 
 .card {
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface) 42%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 15px 14px;
   margin-bottom: 12px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), var(--hairline);
 }
 
 .row {
@@ -145,9 +153,9 @@ button:disabled {
 }
 /* The "go train now" CTA — electric lime, impossible to miss */
 .btn-go {
-  background: linear-gradient(180deg, #d4ff66, #b6e83a);
+  background: var(--grad-go);
   border-color: transparent;
-  color: #16230a;
+  color: var(--on-go);
   font-weight: 800;
   box-shadow: 0 6px 18px rgba(196, 242, 70, 0.3);
 }
@@ -175,8 +183,8 @@ button:disabled {
   color: var(--good);
 }
 .chip-amend {
-  background: #3a1f33;
-  color: #ff9ee0;
+  background: var(--amend-soft);
+  color: var(--amend);
 }
 .chip-lapsed {
   background: #3a201d;
@@ -323,9 +331,9 @@ button:disabled {
   transform: scale(0.92);
 }
 .set-check-done {
-  background: linear-gradient(180deg, #d4ff66, #b6e83a);
+  background: var(--grad-go);
   border-color: transparent;
-  color: #16230a;
+  color: var(--on-go);
   box-shadow: 0 4px 14px rgba(196, 242, 70, 0.35);
 }
 .set-just-logged .set-check-done {
@@ -466,8 +474,8 @@ button:disabled {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #d4ff66, #b6e83a);
-  color: #16230a;
+  background: var(--grad-go);
+  color: var(--on-go);
   font-size: 13px;
   font-weight: 900;
   display: flex;
@@ -505,7 +513,7 @@ button:disabled {
 }
 .exercise-card.exercise-done {
   opacity: 1;
-  border-color: #4d5e1f;
+  border-color: var(--lime-edge);
   background: linear-gradient(180deg, rgba(196, 242, 70, 0.1), var(--surface));
   box-shadow:
     0 4px 22px rgba(196, 242, 70, 0.14),
@@ -546,7 +554,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 12px;
-  border-color: #4d5e1f;
+  border-color: var(--lime-edge);
   background: linear-gradient(180deg, rgba(196, 242, 70, 0.08), var(--surface));
 }
 .pr-trophy {
@@ -665,7 +673,7 @@ button:disabled {
 
 /* Window-gated home */
 .open-now {
-  border-color: #4d5e1f;
+  border-color: var(--lime-edge);
   background: linear-gradient(180deg, #1c2410, var(--surface));
   box-shadow: 0 8px 28px rgba(196, 242, 70, 0.16);
 }
@@ -742,7 +750,7 @@ button:disabled {
 .card-block {
   font-size: 14.5px;
   line-height: 1.55;
-  color: #cdd5e2;
+  color: var(--text-dim);
   margin: 12px 0;
 }
 .card-block.run,
@@ -843,7 +851,7 @@ button:disabled {
 .k-body p {
   font-size: 14.5px;
   line-height: 1.62;
-  color: #cdd5e2;
+  color: var(--text-dim);
   margin: 14px 0 0;
 }
 
@@ -898,7 +906,7 @@ button:disabled {
   color: var(--good);
 }
 .wk-slot-mark.wk-amend {
-  color: #ff9ee0;
+  color: var(--amend);
 }
 .wk-slot-mark.wk-miss {
   color: var(--danger);
@@ -911,7 +919,7 @@ button:disabled {
 .week-line {
   font-size: 16px;
   line-height: 1.6;
-  color: #cdd5e2;
+  color: var(--text-dim);
   margin: 16px 0;
   padding-left: 14px;
   border-left: 2px solid var(--accent);
